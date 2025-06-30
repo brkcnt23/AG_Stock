@@ -11,7 +11,7 @@
     />
 
     <StatsGrid 
-      :statistics="store.statistics" 
+      :statistics="sarfStatistics" 
       item-type="Sarf Malzeme"
     />
 
@@ -275,6 +275,25 @@ import MaterialForm from '../components/MaterialForm.vue'
 
 // Store
 const store = useSarfStore()
+const hasFetched = ref(false)
+// Statistics
+const sarfStatistics = computed(() => {
+  const items = store.items
+  const totalItems = items.length
+  const totalValue = items.reduce((sum, i) => sum + (i.satinAlisFiyati || 0), 0)
+  const lowStock = items.filter(i => {
+    const pct = getStockPercentage(i)   // sayfa altındaki util’ı kullan
+    return pct < 20
+  }).length
+  const oneMonthAgo = new Date()
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+  const recentlyAdded = items.filter(i => {
+    const d = new Date(i.girisTarihi || '')
+    return !isNaN(d.getTime()) && d >= oneMonthAgo
+  }).length
+
+  return { totalItems, totalValue, lowStock, recentlyAdded }
+})
 
 // State
 const selectedItems = ref<string[]>([])
@@ -381,6 +400,8 @@ const paginatedData = computed(() => {
 
 // Methods
 const fetchData = async () => {
+  // Eğer zaten veri çekme süreci başladıysa çık:
+  if (store.loading) return
   await store.fetchItems()
 }
 
@@ -709,7 +730,10 @@ const getMalzemeCinsiClass = (cins: string) => {
 
 // Lifecycle
 onMounted(() => {
-  fetchData()
+  if (!hasFetched.value) {
+    fetchData()
+    hasFetched.value = true
+  }
 })
 </script>
 

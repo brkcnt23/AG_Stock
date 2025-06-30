@@ -50,7 +50,7 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
+
     console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params)
     return config
   },
@@ -68,31 +68,31 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as any
-    
+
     console.error('[API] Response Error:', {
       status: error.response?.status,
       message: error.message,
       url: originalRequest?.url
     })
-    
+
     // Retry logic for network errors
     if (!error.response && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true
       originalRequest._retryCount = (originalRequest._retryCount || 0) + 1
-      
+
       if (originalRequest._retryCount <= API_CONFIG.retries) {
         console.log(`[API] Retrying request (${originalRequest._retryCount}/${API_CONFIG.retries})`)
         await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay))
         return apiClient(originalRequest)
       }
     }
-    
+
     // Handle 401 unauthorized
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
       window.location.href = '/login'
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -125,25 +125,37 @@ export class BaseApiService {
 
   // Get all items with pagination and filtering
   async getItems<T>(params: Record<string, any> = {}): Promise<ApiResponse<T[]>> {
-    try {
-      const response = await apiClient.get(this.endpoint, { params })
-      
-      if (response.data.success) {
-        return response.data
-      } else {
-        throw new Error(response.data.message || 'API hatası')
+  try {
+    const response = await apiClient.get(this.endpoint, { params })
+    const payload = response.data
+
+    // Eğer direkt dizi döndüyse, başarı flag’ini manuel set edelim
+    if (Array.isArray(payload)) {
+      return {
+        success: true,
+        data: payload,
+        message: '',
+        pagination: undefined
       }
-    } catch (error) {
-      console.error(`[${this.endpoint}] Get items error:`, error)
-      throw this.handleError(error)
     }
+
+    // Eski format: { success, data, … }
+    if (payload.success) {
+      return payload
+    }
+
+    throw new Error(payload.message || 'API hatası')
+  } catch (error: any) {
+    console.error(`[${this.endpoint}] Get items error:`, error)
+    throw this.handleError(error)
   }
+}
 
   // Get single item by ID
   async getItem<T>(id: string): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.get(`${this.endpoint}/${id}`)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -159,7 +171,7 @@ export class BaseApiService {
   async createItem<T>(data: Partial<T>): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.post(this.endpoint, data)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -175,7 +187,7 @@ export class BaseApiService {
   async updateItem<T>(id: string, data: Partial<T>): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.put(`${this.endpoint}/${id}`, data)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -191,7 +203,7 @@ export class BaseApiService {
   async deleteItem<T>(id: string): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.delete(`${this.endpoint}/${id}`)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -207,7 +219,7 @@ export class BaseApiService {
   async updateStock<T>(id: string, stockData: { stok: number; operation?: 'set' | 'add' | 'subtract' }): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.patch(`${this.endpoint}/${id}/stock`, stockData)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -223,7 +235,7 @@ export class BaseApiService {
   async getStats<T>(): Promise<ApiResponse<T>> {
     try {
       const response = await apiClient.get(`${this.endpoint}/stats`)
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -243,7 +255,7 @@ export class BaseApiService {
         items,
         updateData
       })
-      
+
       if (response.data.success) {
         return response.data
       } else {
@@ -259,7 +271,7 @@ export class BaseApiService {
   private handleError(error: any): ApiError {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<any>
-      
+
       return {
         success: false,
         message: axiosError.response?.data?.message || axiosError.message || 'Network error',
@@ -267,7 +279,7 @@ export class BaseApiService {
         statusCode: axiosError.response?.status
       }
     }
-    
+
     return {
       success: false,
       message: error.message || 'Unknown error'

@@ -1,424 +1,219 @@
-<!-- frontend/src/pages/HalatPage.vue - Fixed TypeScript errors -->
 <template>
   <div class="halat-page">
-    <PageHeader 
-      title="Halat Yönetimi" 
-      :breadcrumbs="['Ana Sayfa', 'Malzemeler', 'Halat']"
-    />
+    <!-- 1) Başlık ve Export / Add düğmeleri -->
+    <PageHeader title="🧵 Halat Yönetimi" subtitle="Asma Germe Sistemleri – Halat Takibi" item-type="Halat"
+      export-label="Halat Raporu" @add-item="openAddModal" @export="exportData" />
 
-    <!-- Stats Grid -->
-    <StatsGrid :statistics="halatStatistics" item-type="halat" />
+    <!-- 2) İstatistik Kartları -->
+    <StatsGrid :statistics="halatStatistics" item-type="Halat" />
 
-    <!-- Filters and Controls -->
-    <div class="content-section">
-      <div class="filters-bar">
-        <!-- Search -->
-        <div class="search-group">
-          <div class="search-box">
-            <input 
-              v-model="searchText" 
-              type="text" 
-              placeholder="Halat ara (ad, kalite, cins...)"
-              class="search-input"
-              @input="debouncedSearch"
-            />
-            <i class="search-icon">🔍</i>
-          </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="filter-group">
-          <select v-model="filters.status" class="filter-select" @change="applyFilters">
-            <option value="">Tüm Durumlar</option>
-            <option value="stokta">Stokta</option>
-            <option value="tukendi">Tükendi</option>
-            <option value="kritik">Kritik Seviye</option>
-          </select>
-          
-          <select v-model="filters.type" class="filter-select" @change="applyFilters">
-            <option value="">Tüm Tipler</option>
-            <option value="celik">Çelik Halat</option>
-            <option value="sentetik">Sentetik Halat</option>
-            <option value="karma">Karma Halat</option>
-          </select>
-          
-          <button @click="clearFilters" class="btn btn-outline" :disabled="!hasActiveFilters">
-            🗑️ Filtreleri Temizle
-          </button>
-        </div>
+    <!-- 3) Filtre & Arama -->
+    <FiltersSection :filters="filters" :search-text="searchText" :malzeme-cinsi-options="halatCinsiOptions"
+      malzeme-cinsi-label="Halat Cinsi" search-placeholder="Ad, kalite, tedarikçi ara…" @filter-change="onFilterChange"
+      @search-change="onSearchChange" @clear-filters="clearFilters" @show-stock-only="showOnlyStock" />
 
-        <!-- Actions -->
-        <div class="action-group">
-          <button @click="refreshData" class="btn btn-outline" :disabled="loading">
-            🔄 Yenile
-          </button>
-          <button @click="exportData" class="btn btn-outline" :disabled="loading || halats.length === 0">
-            📊 Export
-          </button>
-          <button @click="openCreateModal" class="btn btn-primary">
-            ➕ Yeni Halat
-          </button>
-        </div>
-      </div>
+    <!-- 4) Tablo -->
+    <BaseDataTable title="📋 Halat Listesi" item-type="halat malzemesi" :paginated-data="paginatedData"
+      :filtered-count="filteredItems.length" :total-items="filteredItems.length" :current-page="currentPage"
+      :items-per-page="itemsPerPage" :current-density="viewDensity" :loading="loading" :error="error"
+      :selected-items="selectedItems" @density-change="viewDensity = $event" @items-change="onItemsChange"
+      @toggle-select-all="toggleSelectAll" @item-select="onItemSelect" @page-change="onPageChange"
+      @view-item="viewItemDetails" @edit-item="editItem" @delete-item="deleteItem" @duplicate-item="duplicateItem"
+      @retry="fetchData">
+      <!-- Sütun Başlıkları -->
+      <template #table-head>
+        <th>No</th>
+        <th>Kalite</th>
+        <th>Tip</th>
+        <th>Çap (mm)</th>
+        <th>Uzunluk (m)</th>
+        <th>Stok</th>
+        <th>Birim</th>
+        <th>Fiyat</th>
+        <th>Tedarikçi</th>
+        <th>Depo</th>
+        <th>Raf</th>
+        <th>Açıklama</th>
+        <th>Giriş Tarihi</th>
+      </template>
 
-      <!-- Data Table -->
-      <div class="table-section">
-        <BaseDataTable
-          title="Halat Listesi"
-          item-type="halat"
-          :paginated-data="halats"
-          :filtered-count="pagination.totalCount"
-          :total-items="pagination.totalCount"
-          :current-page="pagination.page"
-          :items-per-page="pagination.limit"
-          :current-density="tableDensity"
-          :loading="loading"
-          :error="error"
-          :selectable="false"
-          empty-message="Henüz halat kaydı bulunmuyor"
-          :low-stock-threshold="10"
-          :critical-stock-threshold="5"
-          @page-change="handlePageChange"
-          @density-change="handleDensityChange"
-          @export="exportData"
-          @add-new="openCreateModal"
-          @edit="openEditModal"
-          @delete="handleDelete"
-          @stock-update="openStockModal"
-        />
-      </div>
-    </div>
+      <!-- Satır Hücreleri -->
+      <template #table-body="{ item }">
+        <td>{{ item.no }}</td>
+        <td>{{ item.kalite || '—' }}</td>
+        <td>{{ item.tip }}</td>
+        <td>{{ item.cap }}</td>
+        <td>{{ item.uzunluk ?? '—' }}</td>
+        <td>{{ item.kalanMiktar ?? item.stok }}</td>
+        <td>{{ item.birim }}</td>
+        <td>
+          {{ item.satinAlisFiyati
+            ? (item.satinAlisFiyati * (item.dovizKur || 1))
+              .toLocaleString('tr-TR') + ' ' + (item.paraBirimi || '')
+            : '—' }}
+        </td>
+        <td>{{ item.tedarikci || '—' }}</td>
+        <td>{{ item.depo || '—' }}</td>
+        <td>{{ item.rafNo || '—' }}</td>
+        <td>{{ item.aciklama || '—' }}</td>
+        <td>
+          {{ new Date(item.girisTarihi).toLocaleDateString('tr-TR') }}
+        </td>
+      </template>
+    </BaseDataTable>
 
-    <!-- Loading Overlay -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Yükleniyor...</p>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error && !loading" class="error-message">
-      <div class="error-content">
-        <h3>⚠️ Bir hata oluştu</h3>
-        <p>{{ error }}</p>
-        <button @click="clearError" class="btn btn-primary">Tamam</button>
-      </div>
-    </div>
-
-    <!-- Modals -->
-    <HalatModal 
-      v-if="showCreateModal" 
-      :halat="null"
-      @close="closeCreateModal"
-      @save="handleCreate"
-    />
-    
-    <HalatModal 
-      v-if="showEditModal && selectedHalat" 
-      :halat="selectedHalat"
-      @close="closeEditModal"
-      @save="handleUpdate"
-    />
-    
-    <StockUpdateModal
-      v-if="showStockModal && selectedHalat"
-      :item="selectedHalat"
-      item-type="halat"
-      @close="closeStockModal"
-      @save="handleStockUpdate"
-    />
+    <!-- 5) Ekle / Düzenle Modalları -->
+    <HalatModal v-if="showCreateModal" :halat="editingItem" @close="closeModals" @save="handleSave" />
+    <StockUpdateModal v-if="showStockModal" :item="editingItem" item-type="halat" @close="closeModals"
+      @save="handleStockUpdate" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, storeToRefs } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useHalatStore } from '../store/halatStore'
-import { useNotificationStore } from '../store/notificationStore'
-import type { HalatItem, CreateHalatData, UpdateHalatData, HalatStockOperation } from '../types/halat'
-import { debounce } from '../utils/debounce'
 import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
+import FiltersSection from '../components/FiltersSection.vue'
 import BaseDataTable from '../components/BaseDataTable.vue'
 import HalatModal from '../components/HalatModal.vue'
 import StockUpdateModal from '../components/StockUpdateModal.vue'
+import type { HalatItem } from '../types/halat'
 
-// Stores
-const halatStore = useHalatStore()
-const notificationStore = useNotificationStore()
+// --- Store ve temel state ---
+const store = useHalatStore()
+const loading = computed(() => store.loading)
+const error = computed(() => store.error)
+const halats = computed(() => store.halats)
 
-// Reactive state
+// --- Filtre & Arama state ---
+const filters = reactive({
+  status: '' as '' | 'stokta' | 'tukendi' | 'kritik',
+  type: '' as '' | 'celik' | 'sentetik' | 'karma',
+  depo: '',
+  tedarikci: ''
+})
 const searchText = ref('')
-const tableDensity = ref<'compact' | 'normal' | 'detailed'>('normal')
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const showStockModal = ref(false)
-const selectedHalat = ref<HalatItem | null>(null)
+const halatCinsiOptions = [
+  { value: 'celik', label: 'Çelik Halat' },
+  { value: 'sentetik', label: 'Sentetik Halat' },
+  { value: 'karma', label: 'Karma Halat' }
+]
 
-// Local filters (synced with store)
-const filters = ref<{
-  status: '' | 'stokta' | 'tukendi' | 'kritik'
-  type: '' | 'celik' | 'sentetik' | 'karma'
-  tedarikci: string
-  depo: string
-}>({
-  status: '',
-  type: '',
-  tedarikci: '',
-  depo: ''
+// --- Tablo seçim ve paging ---
+const selectedItems = ref<string[]>([])
+const viewDensity = ref<'compact' | 'normal' | 'detailed'>('normal')
+const itemsPerPage = ref(20)
+const currentPage = ref(1)
+
+// --- Filtrelenmiş ve sayfalı veri ---
+const filteredItems = computed(() => {
+  let list = halats.value
+
+  // Arama
+  if (searchText.value) {
+    const q = searchText.value.toLowerCase()
+    list = list.filter(h =>
+      h.name.toLowerCase().includes(q) ||
+      h.kalite?.toLowerCase().includes(q) ||
+      h.tedarikci?.toLowerCase().includes(q)
+    )
+  }
+
+  // Durum
+  if (filters.status) {
+    if (filters.status === 'stokta') list = list.filter(h => h.stok > 0)
+    if (filters.status === 'tukendi') list = list.filter(h => h.stok === 0)
+    if (filters.status === 'kritik') list = list.filter(h => h.stok <= (h.minStokSeviyesi || 5))
+  }
+
+  // Cins, depo, tedarikçi
+  if (filters.type) list = list.filter(h => h.cins === filters.type)
+  if (filters.depo) list = list.filter(h => h.depo === filters.depo)
+  if (filters.tedarikci) list = list.filter(h => h.tedarikci === filters.tedarikci)
+
+  return list
+})
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredItems.value.slice(start, start + itemsPerPage.value)
 })
 
-// Computed properties from store
-const { 
-  halats, 
-  loading, 
-  error, 
-  pagination, 
-  totalItems,
-  inStockHalats,
-  outOfStockHalats,
-  criticalStockHalats,
-  stockSufficiency 
-} = storeToRefs(halatStore)
-
-// Computed statistics for StatsGrid
+// --- İstatistikler ---
 const halatStatistics = computed(() => ({
-  totalItems: totalItems.value,
-  totalValue: halats.value.reduce((sum: number, h: HalatItem) => sum + ((h.birimFiyat || 0) * h.stok), 0),
-  lowStock: criticalStockHalats.value.length,
-  recentlyAdded: halats.value
-    .filter((h: HalatItem) => {
-      const created = h.createdAt ? new Date(h.createdAt) : null
-      if (!created) return false
-      const now = new Date()
-      const diff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
-      return diff <= 7 // last 7 days
-    }).length
+  totalItems: halats.value.length,
+  totalValue: halats.value.reduce((sum, h) => sum + (h.birimFiyat || 0), 0),
+  lowStock: halats.value.filter(h => h.stok <= (h.minStokSeviyesi || 5)).length,
+  recentlyAdded: halats.value.filter(h =>
+    new Date(h.createdAt) >= new Date(Date.now() - 30 * 24 * 3600 * 1000)
+  ).length
 }))
 
-const hasActiveFilters = computed(() => {
-  return searchText.value !== '' || 
-         filters.value.status !== '' || 
-         filters.value.type !== '' ||
-         filters.value.tedarikci !== '' ||
-         filters.value.depo !== ''
-})
-
-// Debounced search
-const debouncedSearch = debounce(() => {
-  applyFilters()
-}, 500)
-
-// Methods
-const loadData = async (resetPage = false) => {
-  try {
-    if (resetPage) {
-      halatStore.setPage(1)
-    }
-    
-    await halatStore.fetchHalats({
-      search: searchText.value,
-      status: filters.value.status || undefined,
-      type: filters.value.type || undefined,
-      page: pagination.value.page,
-      limit: pagination.value.limit
-    })
-    
-    // Load stats in parallel
-    halatStore.fetchStats()
-  } catch (err) {
-    console.error('Data loading failed:', err)
-  }
+// --- Tablo ve filtre eventleri ---
+function onFilterChange(newF: typeof filters) { Object.assign(filters, newF); currentPage.value = 1 }
+function onSearchChange(q: string) { searchText.value = q; currentPage.value = 1 }
+function clearFilters() { Object.assign(filters, { status: '', type: '', depo: '', tedarikci: '' }); searchText.value = ''; currentPage.value = 1 }
+function showOnlyStock() { filters.status = 'stokta'; currentPage.value = 1 }
+function onItemsChange(n: string) { itemsPerPage.value = +n; currentPage.value = 1 }
+function onPageChange(p: number) { currentPage.value = p }
+function toggleSelectAll() {
+  if (selectedItems.value.length === paginatedData.value.length) selectedItems.value = []
+  else selectedItems.value = paginatedData.value.map(h => h._id)
+}
+function onItemSelect(id: string) {
+  const i = selectedItems.value.indexOf(id)
+  if (i >= 0) selectedItems.value.splice(i, 1)
+  else selectedItems.value.push(id)
 }
 
-const applyFilters = () => {
-  halatStore.updateFilters({
+// --- Format fonksiyonları ---
+function formatPrice(p?: number, cur?: string) {
+  if (!p) return '—'
+  return `${p.toLocaleString('tr-TR')} ${cur || ''}`
+}
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString('tr-TR')
+}
+
+// --- CRUD ve modal işlemleri ---
+const showCreateModal = ref(false)
+const showStockModal = ref(false)
+let editingItem: HalatItem | null = null
+
+function openAddModal() { editingItem = null; showCreateModal.value = true }
+function viewItemDetails(item: HalatItem) { editingItem = item; showStockModal.value = true }
+function editItem(item: HalatItem) { editingItem = item; showCreateModal.value = true }
+function deleteItem(item: HalatItem) { if (confirm(`${item.name} silinsin mi?`)) store.deleteHalat(item._id) }
+function duplicateItem(item: HalatItem) { /* aynısını ekle */ }
+function closeModals() { showCreateModal.value = false; showStockModal.value = false }
+async function handleSave(data: HalatItem) {
+  if (!editingItem) await store.createHalat(data)
+  else await store.updateHalat(editingItem._id, data)
+  closeModals()
+  fetchData()
+}
+async function handleStockUpdate(op: any) {
+  if (!editingItem) return
+  await store.updateStock(editingItem._id, op)
+  closeModals()
+  fetchData()
+}
+
+// --- Veri yükleme ---
+async function fetchData() {
+  await store.fetchHalats({
+    page: currentPage.value,
+    limit: itemsPerPage.value,
     search: searchText.value,
-    status: filters.value.status,
-    type: filters.value.type,
-    tedarikci: filters.value.tedarikci,
-    depo: filters.value.depo
+    status: filters.status || undefined,
+    type: filters.type || undefined
   })
-  loadData(true)
 }
 
-const clearFilters = () => {
-  searchText.value = ''
-  filters.value = {
-    status: '',
-    type: '',
-    tedarikci: '',
-    depo: ''
-  }
-  halatStore.resetFilters()
-  loadData(true)
-}
-
-const refreshData = () => {
-  loadData()
-}
-
-const exportData = () => {
-  try {
-    halatStore.exportHalats()
-    notificationStore.addNotification({
-      type: 'success',
-      title: 'Export Başarılı',
-      message: 'Halat verileri Excel dosyası olarak indirildi'
-    })
-  } catch (err) {
-    notificationStore.addNotification({
-      type: 'error',
-      title: 'Export Hatası',
-      message: 'Export işlemi başarısız oldu'
-    })
-  }
-}
-
-// Pagination handlers
-const handlePageChange = (page: number) => {
-  halatStore.setPage(page)
-  loadData()
-}
-
-const handleDensityChange = (density: 'compact' | 'normal' | 'detailed') => {
-  tableDensity.value = density
-}
-
-// Modal handlers
-const openCreateModal = () => {
-  selectedHalat.value = null
-  showCreateModal.value = true
-}
-
-const closeCreateModal = () => {
-  showCreateModal.value = false
-  selectedHalat.value = null
-}
-
-const openEditModal = (halat: HalatItem) => {
-  selectedHalat.value = halat
-  showEditModal.value = true
-}
-
-const closeEditModal = () => {
-  showEditModal.value = false
-  selectedHalat.value = null
-}
-
-const openStockModal = (halat: HalatItem) => {
-  selectedHalat.value = halat
-  showStockModal.value = true
-}
-
-const closeStockModal = () => {
-  showStockModal.value = false
-  selectedHalat.value = null
-}
-
-// CRUD operations
-const handleCreate = async (data: CreateHalatData) => {
-  try {
-    await halatStore.createHalat(data)
-    
-    notificationStore.addNotification({
-      type: 'success',
-      title: 'Başarılı',
-      message: 'Yeni halat başarıyla eklendi'
-    })
-    
-    closeCreateModal()
-    refreshData()
-  } catch (err) {
-    notificationStore.addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: 'Halat eklenirken bir hata oluştu'
-    })
-  }
-}
-
-const handleUpdate = async (data: UpdateHalatData) => {
-  try {
-    if (!selectedHalat.value) return
-    
-    await halatStore.updateHalat(selectedHalat.value._id, data)
-    
-    notificationStore.addNotification({
-      type: 'success',
-      title: 'Başarılı',
-      message: 'Halat bilgileri başarıyla güncellendi'
-    })
-    
-    closeEditModal()
-    refreshData()
-  } catch (err) {
-    notificationStore.addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: 'Halat güncellenirken bir hata oluştu'
-    })
-  }
-}
-
-const handleDelete = async (halat: HalatItem) => {
-  try {
-    const confirmed = confirm(`"${halat.name}" adlı halatı silmek istediğinizden emin misiniz?`)
-    if (!confirmed) return
-    
-    await halatStore.deleteHalat(halat._id)
-    
-    notificationStore.addNotification({
-      type: 'success',
-      title: 'Başarılı',
-      message: 'Halat başarıyla silindi'
-    })
-    
-    refreshData()
-  } catch (err) {
-    notificationStore.addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: 'Halat silinirken bir hata oluştu'
-    })
-  }
-}
-
-const handleStockUpdate = async (stockData: HalatStockOperation) => {
-  try {
-    if (!selectedHalat.value) return
-    
-    await halatStore.updateStock(selectedHalat.value._id, stockData)
-    
-    notificationStore.addNotification({
-      type: 'success',
-      title: 'Başarılı',
-      message: 'Stok başarıyla güncellendi'
-    })
-    
-    closeStockModal()
-    refreshData()
-  } catch (err) {
-    notificationStore.addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: 'Stok güncellenirken bir hata oluştu'
-    })
-  }
-}
-
-const clearError = () => {
-  halatStore.clearError()
-}
-
-// Watchers
-watch(() => filters.value, () => {
-  applyFilters()
-}, { deep: true })
-
-// Lifecycle
-onMounted(() => {
-  loadData()
-})
+// --- Lifecycle ---
+onMounted(fetchData)
 </script>
+
 
 <style scoped>
 .halat-page {
@@ -532,8 +327,13 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Error Message */
@@ -612,18 +412,18 @@ onMounted(() => {
   .halat-page {
     padding: 16px;
   }
-  
+
   .filters-bar {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
-  
+
   .filter-group,
   .action-group {
     flex-direction: column;
   }
-  
+
   .search-group {
     min-width: auto;
   }
