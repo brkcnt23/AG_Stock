@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Stok Takip Sistemi</title>
+</head>
+
+<body>
+    <h1>CANLI LOG PANELİ</h1>
+    <div id="logPanel"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 STOK TAKİP SİSTEMİ</h1>
+            <p>Fitil • Membran • Halat • Çelik • Sarf Malzeme Takibi</p>
+        </div>
+
+        <!-- Ana Menü -->
+        <div id="main-menu">
+            <div class="nav-buttons">
+                <button class="nav-btn btn-fitil" onclick="showSection('fitil')">🧵 FİTİL</button>
+                <button class="nav-btn btn-membran" onclick="showSection('membran')">🎭 MEMBRAN</button>
+                <button class="nav-btn btn-halat" onclick="showSection('halat')">🪢 HALAT</button>
+                <button class="nav-btn btn-celik" onclick="showSection('celik')">🔩 ÇELİK</button>
+                <button class="nav-btn btn-sarf" onclick="showSection('sarf')">📦 SARF DEPO</button>
+            </div>
+        </div>
+
+        <!-- Fitil Bölümü -->
+        <div id="fitil-section" class="section">
+            <button class="back-btn" onclick="showMainMenu()">← Ana Menü</button>
+            <div class="add-form">
+                <h3>🧵 Yeni Fitil Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Fitil:
+                            <input type="text" id="fitil-fitil" placeholder="Ø 7">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Renk:
+                            <input type="text" id="fitil-renk" placeholder="Beyaz">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Yaprak:
+                            <select id="fitil-yaprak">
+                                <option value="Tek">Tek</option>
+                                <option value="Çift">Çift</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Yaprak Uzunluğu:
+                            <input type="number" id="fitil-yaprak-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Adet:
+                            <input type="number" id="fitil-adet">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Top Uzunluğu (m):
+                            <input type="number" id="fitil-top-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Tarihi
+                            <input type="date" id="fitil-satinTarih">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Fiyatı
+                            <input type="number" id="fitil-satinFiyat" step="0.01">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Döviz Kuru
+                            <input type="number" id="fitil-dovizKur" step="0.01" value="1">
+                        </label>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addFitil()">Fitil Ekle</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fitil</th>
+                            <th>Renk</th>
+                            <th>Yaprak</th>
+                            <th>Yaprak Uzunluğu</th>
+                            <th>Adet</th>
+                            <th>Top Uzunluğu (m)</th>
+                            <th>Toplam Uzunluk (m)</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fitil-table">
+                        <tr>
+                            <td>Ø 7</td>
+                            <td>Beyaz</td>
+                            <td>Tek</td>
+                            <td></td>
+                            <td>25</td>
+                            <td>150</td>
+                            <td>3750</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>Ø 10</td>
+                            <td>Beyaz</td>
+                            <td>Çift</td>
+                            <td></td>
+                            <td>17</td>
+                            <td>150</td>
+                            <td>2550</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>Ø 10</td>
+                            <td>Opak</td>
+                            <td>Tek</td>
+                            <td></td>
+                            <td>23</td>
+                            <td>150</td>
+                            <td>3450</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>Ø 10</td>
+                            <td>Beyaz</td>
+                            <td>Tek</td>
+                            <td></td>
+                            <td>6</td>
+                            <td>150</td>
+                            <td>900</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>Ø 13</td>
+                            <td>Opak</td>
+                            <td>Çift</td>
+                            <td></td>
+                            <td>3</td>
+                            <td>150</td>
+                            <td>450</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="recent-actions">
+                <h3>Son İşlemler</h3>
+                <div id="fitil-actions"></div>
+            </div>
+        </div>
+
+        <!-- Membran Bölümü -->
+        <div id="membran-section" class="section">
+            <button class="back-btn" onclick="showMainMenu()">← Ana Menü</button>
+            <div class="add-form">
+                <h3>🎭 Yeni Membran Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Palet No:
+                            <input type="text" id="membran-palet">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Marka:
+                            <input type="text" id="membran-marka">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Model:
+                            <input type="text" id="membran-model">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Renk:
+                            <input type="text" id="membran-renk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Renk Kodu:
+                            <input type="text" id="membran-renk-kodu">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Parti No:
+                            <input type="text" id="membran-parti">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Seri No:
+                            <input type="text" id="membran-seri">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Sınıf:
+                            <input type="number" id="membran-sinif">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Top Sayısı:
+                            <input type="number" id="membran-top-sayisi">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>En (m):
+                            <input type="number" step="0.01" id="membran-en">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Top Uzunluğu (m):
+                            <input type="number" id="membran-top-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Toplam Uzunluk:
+                            <input type="number" id="membran-toplam-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Alan (m²):
+                            <input type="number" step="0.1" id="membran-alan">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Proje:
+                            <input type="text" id="membran-proje">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Durum:
+                            <input type="text" id="membran-durum">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Note:
+                            <input type="text" id="membran-note">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Sahibi:
+                            <input type="text" id="membran-sahibi">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Tip:
+                            <select id="membran-tip">
+                                <option value="MESH">MESH</option>
+                                <option value="PTFE">PTFE</option>
+                                <option value="ETFE">ETFE</option>
+                                <option value="ST">ST</option>
+                                <option value="AKRİLİK">AKRİLİK</option>
+                                <option value="IMALAT">IMALAT</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Tarihi
+                            <input type="date" id="membran-satinTarih">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Fiyatı
+                            <input type="number" id="membran-satinFiyat" step="0.01">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Döviz Kuru
+                            <input type="number" id="membran-dovizKur" step="0.01" value="1">
+                        </label>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addMembran()">Membran Ekle</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Palet No</th>
+                            <th>Marka</th>
+                            <th>Model</th>
+                            <th>Renk</th>
+                            <th>Renk Kodu</th>
+                            <th>Parti No</th>
+                            <th>Seri No</th>
+                            <th>Sınıf</th>
+                            <th>Top Sayısı</th>
+                            <th>En (m)</th>
+                            <th>Top Uzunluğu (m)</th>
+                            <th>Toplam Uzunluk</th>
+                            <th>Alan (m²)</th>
+                            <th>Proje</th>
+                            <th>Durum</th>
+                            <th>Note</th>
+                            <th>Sahibi</th>
+                            <th>Tip</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membran-table">
+                        <tr>
+                            <td>2</td>
+                            <td>MEHLER</td>
+                            <td>POLİMER POLİOPAK</td>
+                            <td>GRİ</td>
+                            <td>717717</td>
+                            <td>827128</td>
+                            <td>0-004</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>2,50</td>
+                            <td>35</td>
+                            <td>35</td>
+                            <td>87,5</td>
+                            <td></td>
+                            <td>STOK</td>
+                            <td></td>
+                            <td>AG</td>
+                            <td>MESH</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="recent-actions">
+                <h3>Son İşlemler</h3>
+                <div id="membran-actions"></div>
+            </div>
+        </div>
+
+        <!-- Halat Bölümü -->
+        <div id="halat-section" class="section">
+            <button class="back-btn" onclick="showMainMenu()">← Ana Menü</button>
+            <div class="add-form">
+                <h3>🪢 Yeni Halat Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Halat Çapı:
+                            <input type="text" id="halat-cap" placeholder="Ø16">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Adet:
+                            <input type="number" id="halat-adet">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Halat Tipi:
+                            <input type="text" id="halat-tip" placeholder="6x19">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Uzunluğu (Mt):
+                            <input type="number" step="0.01" id="halat-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>İzole Durumu:
+                            <select id="halat-izole">
+                                <option value="Var">Var</option>
+                                <option value="Yok">Yok</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>1. Ucu:
+                            <input type="text" id="halat-uc1">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>2. Ucu:
+                            <input type="text" id="halat-uc2">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Kullanıldığı Proje:
+                            <input type="text" id="halat-proje">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama:
+                            <input type="text" id="halat-aciklama">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Tarihi
+                            <input type="date" id="halat-satinTarih">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Fiyatı
+                            <input type="number" id="halat-satinFiyat" step="0.01">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Döviz Kuru
+                            <input type="number" id="halat-dovizKur" step="0.01" value="1">
+                        </label>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addHalat()">Halat Ekle</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Halat Çapı</th>
+                            <th>Adet</th>
+                            <th>Halat Tipi</th>
+                            <th>Uzunluğu (Mt)</th>
+                            <th>İzole Durumu</th>
+                            <th>1. Ucu</th>
+                            <th>2. Ucu</th>
+                            <th>Kullanıldığı Proje</th>
+                            <th>Açıklama</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="halat-table">
+                        <tr>
+                            <td>1</td>
+                            <td>Ø16</td>
+                            <td>1</td>
+                            <td>6x19</td>
+                            <td>19</td>
+                            <td>Var</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Ø12</td>
+                            <td>1</td>
+                            <td>6x19</td>
+                            <td>22</td>
+                            <td>Yok</td>
+                            <td>Saplama</td>
+                            <td>-</td>
+                            <td>BIG GLILOT</td>
+                            <td>Kullanıldı</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="recent-actions">
+                <h3>Son İşlemler</h3>
+                <div id="halat-actions"></div>
+            </div>
+        </div>
+
+        <!-- Çelik Bölümü -->
+        <div id="celik-section" class="section">
+            <button class="back-btn" onclick="showMainMenu()">← Ana Menü</button>
+            <div class="add-form">
+                <h3>🔩 Yeni Çelik Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Boru Çapı:
+                            <input type="text" id="celik-cap" placeholder="Ø90">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Et Kalınlığı:
+                            <input type="number" id="celik-kalinlik">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Adet:
+                            <input type="number" id="celik-adet">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Uzunluğu (mm):
+                            <input type="number" id="celik-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Kullanıldığı Proje:
+                            <input type="text" id="celik-proje">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama:
+                            <input type="text" id="celik-aciklama">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Kalite:
+                            <input type="text" id="celik-kalite" placeholder="316L">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Tip:
+                            <select id="celik-tip">
+                                <option value="Siyah">Siyah</option>
+                                <option value="Paslanmaz">Paslanmaz</option>
+                                <option value="Alüminyum">Alüminyum</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Tarihi
+                            <input type="date" id="celik-satinTarih">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Fiyatı
+                            <input type="number" id="celik-satinFiyat" step="0.01">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Döviz Kuru
+                            <input type="number" id="celik-dovizKur" step="0.01" value="1">
+                        </label>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addCelik()">Çelik Ekle</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Boru Çapı</th>
+                            <th>Et Kalınlığı</th>
+                            <th>Adet</th>
+                            <th>Uzunluğu (mm)</th>
+                            <th>Kullanıldığı Proje</th>
+                            <th>Açıklama</th>
+                            <th>Kalite</th>
+                            <th>Tip</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="celik-table">
+                        <tr>
+                            <td>1</td>
+                            <td>Ø90</td>
+                            <td>4</td>
+                            <td>1</td>
+                            <td>1400</td>
+                            <td></td>
+                            <td></td>
+                            <td>316L</td>
+                            <td>Paslanmaz</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td>17</td>
+                            <td>Ø90</td>
+                            <td>4</td>
+                            <td>1</td>
+                            <td>1500</td>
+                            <td></td>
+                            <td></td>
+                            <td>316L</td>
+                            <td>Paslanmaz</td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="recent-actions">
+                <h3>Son İşlemler</h3>
+                <div id="celik-actions"></div>
+            </div>
+        </div>
+
+        <!-- Sarf Depo Bölümü -->
+        <div id="sarf-section" class="section">
+            <button class="back-btn" onclick="showMainMenu()">← Ana Menü</button>
+            <div class="add-form">
+                <h3>📦 Yeni Sarf Malzeme Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Malzeme Kalitesi:
+                            <input type="text" id="sarf-kalite" placeholder="316L">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Malzeme Cinsi:
+                            <input type="text" id="sarf-cins" placeholder="PLAKA">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>En (Çap):
+                            <input type="number" id="sarf-en">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Boy:
+                            <input type="number" id="sarf-boy">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Kalınlık:
+                            <input type="number" step="0.1" id="sarf-kalinlik">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Uzunluk:
+                            <input type="number" id="sarf-uzunluk">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Proje:
+                            <input type="text" id="sarf-proje">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Yön. İm. Dos. No:
+                            <input type="text" id="sarf-yonetim">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>İzl. No:
+                            <input type="text" id="sarf-izleme">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Raf No:
+                            <input type="text" id="sarf-rafno">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Tarihi
+                            <input type="date" id="sarf-satinTarih">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Satın Alma Fiyatı
+                            <input type="number" id="sarf-satinFiyat" step="0.01">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Döviz Kuru
+                            <input type="number" id="sarf-dovizKur" step="0.01" value="1">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="js/socket.io.min.js"></script>
+        <script src="js/app.js"></script>
+
+</body>
+
+</html>
