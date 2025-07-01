@@ -1,83 +1,51 @@
 // frontend/src/types/projects.ts
 
 export interface Project {
-  _id?: string
-  id?: string
-  createdAt?: string
-  updatedAt?: string
-
-  // TEMEL BİLGİLER
+  _id: string
   name: string
   description?: string
+  status: 'planning' | 'reserved' | 'active' | 'completed' | 'cancelled'
+  startDate?: string | null
+  endDate?: string | null
+  reserveUntil?: string | null
+  priority: 'low' | 'medium' | 'high'
+  projectManager?: string
   customer?: string
   projectCode?: string
-
-  // DURUM YÖNETİMİ
-  status: 'planning' | 'reserved' | 'active' | 'completed' | 'cancelled'
-
-  // TARİHLER
-  startDate?: string
-  endDate?: string
-  estimatedDuration?: number
-
-  // FİNANSAL
-  budget?: number
-  totalMaterialCost?: number
-  currency?: 'TL' | 'USD' | 'EUR'
-  exchangeRate?: number
-
-  // MALZEMELER
-  materials: ProjectMaterial[]
-
-  // İSTATİSTİKLER
+  team?: string[]
+  budget: number
+  estimatedCost: number
+  actualCost: number
+  currency: string
+  totalMaterialCost: number
   totalItems: number
+  stockSufficiency: number
+  reservedItems: number
   availableItems: number
   missingItems: number
-  reservedItems: number
-  stockSufficiency: number
-
-  // NOTLAR
+  materials: ProjectMaterial[]
   notes?: string
-  requirements?: string
+  tags?: string[]
+  reservationHistory: ReservationHistory[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface ProjectMaterial {
-  id?: string
-  materialId: string
+  _id: string
   materialType: 'sarf' | 'celik' | 'membran' | 'halat' | 'fitil' | 'custom'
-
-  // MALZEME BİLGİLERİ
-  name: string
-  description?: string
-  kalite?: string
-  
-  // Specifications artık required
-  specifications: Record<string, any>
-
-  // MİKTAR YÖNETİMİ
+  materialId: string
   requestedQuantity: number
+  allocatedQuantity: number
   reservedQuantity: number
   usedQuantity: number
-  unit: string
-
-  // STOK DURUMU
+  status: 'planned' | 'reserved' | 'ordered' | 'received' | 'used' | 'completed'
+  stockSufficient: boolean
   stockAvailable: boolean
   availableStock?: number
-  stockItemId?: string
-
-  // FİYAT BİLGİLERİ
-  unitPrice?: number
-  totalPrice?: number
-  currency?: 'TL' | 'USD' | 'EUR'
-  supplier?: string
-
-  // DURUM
-  status: 'planned' | 'reserved' | 'ordered' | 'received' | 'used' | 'completed'
-  priority: 'low' | 'medium' | 'high' | 'critical'
-
-  // NOTLAR
   notes?: string
-  alternativeOptions?: string[]
+  name: string
+  stockItemId?: string
 }
 
 export interface StockReservation {
@@ -343,4 +311,28 @@ export interface ProjectMaterialUpdateRequest {
   projectId: string
   materialId: string
   updates: Partial<Omit<ProjectMaterial, 'id' | 'materialId' | 'stockAvailable' | 'availableStock' | 'totalPrice' | 'status'>>
+}
+
+export interface ProjectOperationResult {
+  success: boolean
+  message: string
+  data?: Project
+  error?: string
+  stockUpdates?: Array<{
+    materialId: string
+    type: string
+    oldQuantity: number
+    newQuantity: number
+  }>
+}
+
+export interface ProjectValidationResult {
+  isValid: boolean
+  errors: string[]
+  insufficientMaterials?: Array<{
+    materialId: string
+    materialType: string
+    requested: number
+    available: number
+  }>
 }

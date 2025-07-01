@@ -53,7 +53,7 @@
 
     <!-- Projeler Listesi -->
     <div v-else class="projects-grid">
-      <div v-for="project in filteredProjects" :key="objectIdToString(project._id || project.id || '')" class="project-card">
+      <div v-for="project in filteredProjects" :key="objectIdToString(project._id || '')" class="project-card">
         <!-- Proje Header -->
         <div class="project-header">
           <div class="project-info">
@@ -66,7 +66,7 @@
               {{ getStatusLabel(project.status) }}
             </span>
             <div class="project-dates">
-              <small>{{ formatDate(project.startDate) }} - {{ formatDate(project.endDate) }}</small>
+              <small>{{ formatDate(project.startDate ?? undefined) }} - {{ formatDate(project.endDate ?? undefined) }}</small>
             </div>
           </div>
         </div>
@@ -175,6 +175,7 @@ import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import CreateProjectModal from '../components/CreateProjectModal.vue'
 import ProjectDetailsModal from '../components/ProjectDetailsModal.vue'
+import { useNotificationStore } from '../store/notificationStore'
 
 // Store
 const projectStore = useProjectsStore()
@@ -261,44 +262,47 @@ const closeDetailsModal = () => {
 }
 
 const reserveMaterials = async (project: Project) => {
-  if (confirm(`"${project.name}" projesinin malzemelerini rezerve etmek istediğinizden emin misiniz?`)) {
-    try {
-      // ObjectId kontrolü
-      const projectId = project._id || project.id
-      if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
-        throw new Error('Geçersiz proje ID')
-      }
-      
-      await projectStore.reserveProjectMaterials(objectIdToString(projectId))
-      alert('Malzemeler başarıyla rezerve edildi!')
-    } catch (error) {
-      console.error('Rezervasyon hatası:', error)
-      alert('Rezervasyon sırasında hata oluştu!')
+  try {
+    const result = await projectStore.reserveProjectMaterials(project._id!)
+    if (result.success) {
+      useNotificationStore().addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: result.message
+      })
+    } else {
+      throw new Error(result.error)
     }
+  } catch (error) {
+    useNotificationStore().addNotification({
+      type: 'error',
+      title: 'Hata',
+      message: error instanceof Error ? error.message : 'Rezervasyon yapılamadı'
+    })
   }
 }
 
 const startProject = async (project: Project) => {
-  if (confirm(`"${project.name}" projesini başlatmak istediğinizden emin misiniz?`)) {
-    try {
-      const projectId = project._id || project.id
-      if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
-        throw new Error('Geçersiz proje ID')
-      }
-      
-      await projectStore.updateProjectStatus(objectIdToString(projectId), 'active')
-      alert('Proje başlatıldı!')
-    } catch (error) {
-      console.error('Proje başlatma hatası:', error)
-      alert('Proje başlatılırken hata oluştu!')
-    }
+  try {
+    const result = await projectStore.updateProjectStatus(project._id!, 'active')
+    useNotificationStore().addNotification({
+      type: 'success',
+      title: 'Başarılı',
+      message: 'Proje başarıyla başlatıldı'
+    })
+  } catch (error) {
+    useNotificationStore().addNotification({
+      type: 'error',
+      title: 'Hata',
+      message: 'Proje başlatılamadı'
+    })
   }
 }
 
 const completeProject = async (project: Project) => {
   if (confirm(`"${project.name}" projesini tamamlamak istediğinizden emin misiniz?\n\nBu işlem malzemeleri stoktan düşecek!`)) {
     try {
-      const projectId = project._id || project.id
+      const projectId = project._id
       if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
         throw new Error('Geçersiz proje ID')
       }
@@ -314,13 +318,13 @@ const completeProject = async (project: Project) => {
 
 const editProject = (project: Project) => {
   // Edit modal açılacak
-  console.log('Edit project:', objectIdToString(project._id || project.id || ''))
+  console.log('Edit project:', objectIdToString(project._id || ''))
 }
 
 const deleteProject = async (project: Project) => {
   if (confirm(`"${project.name}" projesini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
     try {
-      const projectId = project._id || project.id
+      const projectId = project._id
       if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
         throw new Error('Geçersiz proje ID')
       }
