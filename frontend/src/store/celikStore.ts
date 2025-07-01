@@ -1,7 +1,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { celikService } from '../api/celikService'
+import { celikService } from '../services/celikService'
 import type { CelikItem } from '../types/common'
 import { getErrorMessage } from '../utils/errorHelpers'
 import { convertToStoreItem, convertFromStoreItem } from '../utils/storeHelpers'

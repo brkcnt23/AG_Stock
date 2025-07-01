@@ -2,10 +2,10 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { projectsService } from '../api/projectsService'
+import { projectsService } from '../services/projectsService'
 import type { ProjectItem } from '../types/common'
 
-const useProjectsStore = defineStore('projects', () => {
+export const useProjectsStore = defineStore('projects', () => {
   // State
   const projects = ref<ProjectItem[]>([])
   const loading = ref(false)

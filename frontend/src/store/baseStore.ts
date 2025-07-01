@@ -102,7 +102,7 @@ export interface FitilItem extends BaseItem {
 
 // 2. DÜZELTILMIŞ BASE STORE - src/store/baseStore.ts
 import { ref, computed, type Ref } from 'vue'
-import { BaseApiService } from '../api/baseApiService'
+import { BaseApiService } from '../services/baseApiService'
 
 export interface Statistics {
   totalItems: number

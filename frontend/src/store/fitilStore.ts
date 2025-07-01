@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fitilService } from '../api/fitilService'
+import { fitilService } from '../services/fitilService'
 import type { Fitil } from '../types/fitil'
 import { getErrorMessage } from '../utils/errorHelpers'
 

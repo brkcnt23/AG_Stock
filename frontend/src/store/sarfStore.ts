@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { sarfService } from '../api/sarfService'
+import { sarfService } from '../services/sarfService'
 import type { SarfItem } from '../types/common'  // SarfItem kullan
 import { getErrorMessage } from '../utils/errorHelpers'
 
@@ -10,7 +10,7 @@ export const useSarfStore = defineStore('sarf', () => {
   const currentItem = ref<SarfItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  
+
   // Pagination
   const pagination = ref({
     page: 1,
@@ -56,12 +56,24 @@ export const useSarfStore = defineStore('sarf', () => {
           ...item,
           malzemeTuru: 'sarf' as const  // SarfItem için zorunlu alan
         }))
-        
-        if (response.pagination) {
-          pagination.value = response.pagination
+
+        if (response.page !== undefined && response.limit !== undefined && response.total !== undefined) {
+          const page = response.page
+          const limit = response.limit
+          const totalCount = response.total
+          const totalPages = Math.ceil(totalCount / limit)
+
+          pagination.value = {
+            page,
+            limit,
+            totalCount,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+          }
+        } else {
+          throw new Error(response.message || 'Sarf verileri getirilemedi')
         }
-      } else {
-        throw new Error(response.message || 'Sarf verileri getirilemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -158,11 +170,11 @@ export const useSarfStore = defineStore('sarf', () => {
         if (index !== -1) {
           items.value[index] = updatedItem
         }
-        
+
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = updatedItem
         }
-        
+
         return updatedItem
       } else {
         throw new Error(response.message || 'Sarf malzeme güncellenemedi')
@@ -186,7 +198,7 @@ export const useSarfStore = defineStore('sarf', () => {
 
       if (response.success) {
         items.value = items.value.filter(item => item._id !== id && item.id !== id)
-        
+
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = null
         }
@@ -235,12 +247,12 @@ export const useSarfStore = defineStore('sarf', () => {
     error,
     pagination,
     statistics,
-    
+
     // Computed
     hasData,
     isLoading,
     hasError,
-    
+
     // Actions
     fetchItems,
     fetchItem,

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { halatService } from '../api/halatService'
+import { halatService } from '../services/halatService'
 import type { HalatItem } from '../types/halat'
 import { getErrorMessage } from '../utils/errorHelpers'
 

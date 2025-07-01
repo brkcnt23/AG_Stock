@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { membranService } from '../api/membranService'
+import { membranService } from '../services/membranService'
 import type { Membran, MembranItem } from '../types/membran'
 import { getErrorMessage } from '../utils/errorHelpers'
 

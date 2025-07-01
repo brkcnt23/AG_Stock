@@ -414,14 +414,18 @@ const filteredItems = computed(() => {
   // Search filter
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    items = items.filter((item: MembranItem) => 
-      item.paletNo?.toLowerCase().includes(search) ||
-      item.marka?.toLowerCase().includes(search) ||
-      item.model?.toLowerCase().includes(search) ||
-      item.proje?.toLowerCase().includes(search) ||
-      item.renk?.toLowerCase().includes(search) ||
-      item.cins?.toLowerCase().includes(search)
-    )
+    items = items.filter((item: any) => {
+    const searchableFields = [
+        safeAccess(item, 'paletNo', ''),
+        safeAccess(item, 'marka', ''),
+        safeAccess(item, 'model', ''),
+        safeAccess(item, 'proje', ''),
+        safeAccess(item, 'renk', ''),
+        safeAccess(item, 'cins', ''),
+        safeAccess(item, 'aciklama', '')
+      ]
+      return searchableFields.some(field => field.toLowerCase().includes(search))
+    })
   }
 
   // Apply filters
@@ -579,7 +583,7 @@ const editItem = (item: MembranItem) => {
     model: item.model || '',
     renk: item.renk || '',
     renkKodu: item.renkKodu || '',
-    partiNo: item.partiNo || '',
+    dayanim: item.dayanim || '',
     seriNo: item.seriNo || '',
     topSayisi: item.topSayisi || '',
     topUzunlugu: item.topUzunlugu || '',
