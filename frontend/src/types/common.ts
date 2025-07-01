@@ -1,153 +1,167 @@
-// frontend/src/types/common.ts - Fixed common types
-export interface BaseApiItem {
+// 1. DÜZELTILMIŞ COMMON TYPES - src/types/common.ts
+export interface BaseItem {
   _id?: string
   id?: string
+  malzemeTuru?: string  // OPTIONAL yapıldı çünkü API'den gelmeye bilir
+  malzemeCinsi?: string
+  cins?: string
+  malzeme?: string
+  kalite?: string
+  tip?: string
+  aciklama?: string
+  olcu?: string
+  boyut?: string
+  cap?: number
+  en?: number
+  boy?: number
+  kalinlik?: number
+  uzunluk?: number
+  adet?: number
+  stok?: number
+  kalanMiktar?: number
+  girisMiktar?: number
+  cikisMiktar?: number
+  kullanilanMiktar?: number
+  birim?: string
+  satinAlisFiyati?: number
+  rafFiyati?: number
+  birimFiyat?: number
+  dovizKur?: number
+  paraBirimi?: string
+  parabirimi?: string
+  tedarikci?: string
+  proje?: string
+  rafNo?: string
+  girisTarihi?: string
+  satinAlisTarihi?: string | Date
   createdAt?: string
   updatedAt?: string
+  imDosyaNo?: string
+  izlNo?: string
+  // Çelik-specific fields
+  no?: number
+  boruCap?: string
+  etKalınlık?: string
+  // Fitil-specific fields
+  marka?: string
+  renk?: string
+  renkKodu?: string
+  dayanim?: number
+  elastikiyet?: string | number
+  lotNo?: string
+  uretimTarihi?: string
+  // Membran-specific fields
+  paletNo?: string
+  model?: string
+  topSayisi?: number
+  durumu?: 'Aktif' | 'Pasif' | 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
+  durum?: 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
+  sahibi?: string
+  note?: string
+  mesh?: boolean
+  // Halat-specific fields
+  yapisi?: string
+  gramaj?: number
+  sertifikaNo?: string
+  testRaporu?: string
+  paslanmaz?: boolean
+  kullanimAlani?: string
 }
 
 // Sarf Item
-export interface SarfItem extends BaseApiItem {
-  malzeme?: string
-  kalite?: string
-  cins?: string
-  malzemeCinsi?: 'KAYNAK' | 'Vida' | 'Keski' | 'Bakım' | 'Temizlik' | 'Yağlayıcı' | 'Elektrik' | 'Emniyet' | 'Diğer'
-  en?: string
-  boy?: string
-  kalinlik?: string
-  renk?: string
-  birim?: string
-  girisMiktar?: string
-  cikisMiktar?: string
-  kalanMiktar?: string
-  girisTarihi?: string
-  sonKullanma?: string
-  satinAlisFiyati?: number
-  paraBirimi?: 'TL' | 'USD' | 'EUR'
-  tedarikci?: string
-  lokasyon?: string
-  aciklama?: string
-  durumu?: 'Aktif' | 'Pasif' | 'Tukendi'
-  kategori?: string
-  barkod?: string
-  seriNo?: string
-  garanti?: string
-  minStokMiktari?: string
+export interface SarfItem extends BaseItem {
+  malzemeTuru: 'sarf'
+  sarfTuru?: 'KAYNAK' | 'VIDA' | 'KESKI' | 'BAKIM' | 'TEMIZLIK' | 'YAGLAYICI' | 'DIĞER'
   kritikSeviye?: number
   minSiparis?: number
-  kullanimAlani?: string
+  sonKullanma?: string
+  kullanimAlani?: 'IMALAT' | 'BAKIM' | 'TEMIZLIK' | 'MONTAJ' | 'GENEL'
   kullanimTalimati?: string
-  sarfTuru?: string
-  depoKonumu?: string
-  rafNo?: string
-  gonderilenProjeler?: Array<{
-    projeAdi: string
-    gonderimTarihi: string
-    miktar: string
-    durum: string
-  }>
-  projeReservasyonlari?: Array<{
-    projeId: string
-    projeAdi: string
-    rezerveMiktar: string
-    rezerveTarihi: string
-    durum: string
-  }>
 }
 
-// Celik Item
-export interface CelikItem extends BaseApiItem {
-  no?: number
-  boruCap?: string
-  etKalinlik?: string
-  tip?: 'siyah' | 'paslanmaz' | 'aluminyum'
-  malzemeCinsi?: string
-  kalite?: string
-  adet?: number
-  birim?: string
-  uzunluk?: number
-  girisTarihi?: string
-  satinAlisFiyati?: number
-  paraBirimi?: 'TL' | 'USD' | 'EUR'
-  tedarikci?: string
-  lokasyon?: string
-  aciklama?: string
-  durumu?: 'Aktif' | 'Pasif'
-  kategori?: string
-  barkod?: string
-  seriNo?: string
-  minStokMiktari?: number
-  depoKonumu?: string
-  rafNo?: string
+// Çelik Item
+export interface CelikItem extends BaseItem {
+  malzemeTuru: 'celik'
 }
 
-// Membran Item
-export interface MembranItem extends BaseApiItem {
-  paletNo?: number
-  marka?: string
-  model?: string
-  tip?: string
-  olcu?: string
-  kalite?: string
-  adet?: number
-  birim?: string
-  girisTarihi?: string
-  satinAlisFiyati?: number
-  paraBirimi?: 'TL' | 'USD' | 'EUR'
-  tedarikci?: string
-  lokasyon?: string
-  aciklama?: string
-  durumu?: 'Aktif' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
-  proje?: string
-  sahibi?: string
-  note?: string
-  kategori?: string
-  barkod?: string
-  seriNo?: string
-  minStokMiktari?: number
-  depoKonumu?: string
-  rafNo?: string
+// Membran Item  
+export interface MembranItem extends BaseItem {
+  malzemeTuru: 'membran'
+}
+
+// Halat Item
+export interface HalatItem extends BaseItem {
+  malzemeTuru: 'halat'
+  _id: string
+  id: string
+  name: string
+  cins: 'celik' | 'sentetik' | 'karma'
+  cap: number
+  stok: number
+  birim: string
+  createdAt: string
+  updatedAt: string
 }
 
 // Fitil Item
-export interface FitilItem extends BaseApiItem {
-  malzeme?: string
-  kalite?: string
-  cins?: string
-  cap?: number
-  uzunluk?: number
-  birim?: string
-  adet?: number
-  girisTarihi?: string
-  satinAlisFiyati?: number
-  paraBirimi?: 'TL' | 'USD' | 'EUR'
-  tedarikci?: string
-  lokasyon?: string
-  aciklama?: string
-  durumu?: 'Aktif' | 'Pasif'
-  kategori?: string
-  barkod?: string
-  seriNo?: string
-  minStokMiktari?: number
-  depoKonumu?: string
-  rafNo?: string
+export interface FitilItem extends BaseItem {
+  malzemeTuru: 'fitil'
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-  pagination?: {
-    page: number
-    limit: number
-    totalCount: number
-    totalPages: number
-    hasNextPage: boolean
-    hasPrevPage: boolean
-  }
+// Project Material - EKSİK ALANLAR EKLENDİ
+export interface ProjectMaterial {
+  id?: string                    // ✅ EKLENEN
+  materialId: string
+  materialType: 'sarf' | 'celik' | 'membran' | 'halat' | 'fitil'
+  name: string
+  requestedQuantity: number
+  reservedQuantity: number
+  usedQuantity: number
+  unit: string
+  unitPrice: number
+  totalPrice: number
+  status: 'requested' | 'reserved' | 'used' | 'returned'
+  stockAvailable: boolean
+  availableStock: number
+  stockItemId?: string           // ✅ EKLENEN
+  specifications: Record<string, any>  // ✅ EKLENEN
+  priority: 'low' | 'medium' | 'high' | 'critical'  // ✅ EKLENEN
+  notes?: string
 }
 
+// Project Item - Statistics için düzeltme
+export interface ProjectItem {
+  _id?: string
+  id?: string
+  name: string
+  description: string
+  projectCode?: string
+  customer?: string
+  status: 'planning' | 'reserved' | 'active' | 'completed' | 'cancelled'
+  priority?: 'low' | 'medium' | 'high'
+  startDate?: string
+  endDate?: string
+  reserveUntil?: string
+  estimatedCost: number
+  actualCost: number
+  budget: number
+  totalMaterialCost?: number
+  projectManager: string
+  team: string[]
+  materials: ProjectMaterial[]
+  tags: string[]
+  notes: string
+  createdAt?: string
+  updatedAt?: string
+  // Calculated fields
+  totalItems: number
+  availableItems: number
+  reservedItems: number
+  missingItems: number
+  stockSufficiency: number
+}
+
+// Statistics Interface
 export interface Statistics {
   totalItems: number
   totalValue: number
@@ -155,11 +169,19 @@ export interface Statistics {
   recentlyAdded: number
 }
 
-// Common Enums
-export const CURRENCIES = ['TL', 'USD', 'EUR'] as const
-export const STATUS_OPTIONS = ['Aktif', 'Pasif', 'Tukendi'] as const
-export const UNITS = ['adet', 'kg', 'metre', 'litre', 'paket', 'kutu', 'rulo'] as const
+// API Response Types
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+  pagination?: PaginationInfo
+}
 
-export type Currency = typeof CURRENCIES[number]
-export type Status = typeof STATUS_OPTIONS[number]
-export type Unit = typeof UNITS[number]
+export interface PaginationInfo {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}

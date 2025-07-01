@@ -1,49 +1,52 @@
+
+// frontend/src/api/membranService.ts
 import { BaseApiService } from './baseApiService'
-import type { Membran } from '../types/membran'
+import type { MembranItem } from '../types/membran'
 
 class MembranService extends BaseApiService {
   constructor() {
     super('/membran')
   }
 
-  async getMembranItems(params?: {
+  async getMembrans(params?: {
     page?: number
     limit?: number
     search?: string
     status?: string
     malzemeTuru?: string
     malzemeCinsi?: string
-    proje?: string
     sortBy?: string
     sortOrder?: 'asc' | 'desc'
-    minPrice?: number
-    maxPrice?: number
   }) {
-    return this.getItems<Membran>(params)
+    return this.getItems<MembranItem>(params)
   }
 
   async getMembran(id: string) {
-    return this.getItem<Membran>(id)
+    return this.getItem<MembranItem>(id)
   }
 
-  async createMembran(data: Partial<Membran>) {
-    return this.createItem<Membran>(data)
+  async createMembran(data: Partial<MembranItem>) {
+    return this.createItem<MembranItem>(data)
   }
 
-  async updateMembran(id: string, data: Partial<Membran>) {
-    return this.updateItem<Membran>(id, data)
+  async updateMembran(id: string, data: Partial<MembranItem>) {
+    return this.updateItem<MembranItem>(id, data)
   }
 
   async deleteMembran(id: string) {
-    return this.deleteItem<Membran>(id)
+    return this.deleteItem<MembranItem>(id)
   }
 
   async getMembranStats() {
-    return this.getStats()
-  }
-
-  async bulkMembranOperations(operation: string, items: string[], updateData?: any) {
-    return this.bulkOperations(operation, items, updateData)
+    return this.getStats<{
+      totalCount: number
+      activeCount: number
+      passiveCount: number
+      totalValue: number
+      lowStockCount: number
+      outOfStockCount: number
+      recentCount: number
+    }>()
   }
 }
 

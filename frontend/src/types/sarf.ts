@@ -2,7 +2,7 @@
 export interface Sarf {
   _id?: string
   id?: string
-  
+  malzemeTuru?: string
   // Temel Bilgiler
   malzeme: string
   cins: string
@@ -38,7 +38,7 @@ export interface Sarf {
   tedarikci?: string
   
   // Tarihler
-  girisYarihi?: string
+  girisTarihi?: string
   sonKullanimTarihi?: string
   createdAt?: string
   updatedAt?: string

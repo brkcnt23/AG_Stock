@@ -189,7 +189,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
+import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
 const router = useRouter()
 
 // Mock data - gerçek uygulamada API'den gelecek

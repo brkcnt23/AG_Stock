@@ -43,7 +43,7 @@ export interface Project {
 
 export interface ProjectMaterial {
   id?: string
-  materialId?: string
+  materialId: string
   materialType: 'sarf' | 'celik' | 'membran' | 'halat' | 'fitil' | 'custom'
 
   // MALZEME BİLGİLERİ
@@ -235,8 +235,58 @@ export interface ProjectMaterialStats {
     percentage: number
   }>
 }
+// frontend/src/types/project.ts
+export interface ProjectItem {
+  _id: string
+  name: string
+  description: string
+  status: 'planning' | 'reserved' | 'completed'
+  priority: 'low' | 'medium' | 'high'
+  startDate?: string
+  endDate?: string
+  reserveUntil?: string
+  estimatedCost: number
+  actualCost: number
+  budget: number
+  projectManager: string
+  team: string[]
+  materials: ProjectMaterial[]
+  tags: string[]
+  reservationHistory: ReservationHistory[]
+  notes: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProjectMaterial {
+  materialId: string
+  materialType: 'sarf' | 'celik' | 'membran' | 'halat' | 'fitil' | 'custom'
+  name: string
+  requestedQuantity: number
+  reservedQuantity: number
+  usedQuantity: number
+  unit: string
+  unitPrice?: number
+  totalPrice?: number
+  status: 'planned' | 'reserved' | 'ordered' | 'received' | 'used' | 'completed'
+  stockAvailable: boolean
+  availableStock?: number
+  notes?: string
+}
+
+export interface ReservationHistory {
+  date: string
+  action: 'reserve' | 'use' | 'return' | 'cancel'
+  materialId: string
+  quantity: number
+  notes?: string
+  userId?: string
+  userName?: string
+}
+
+
 export interface ProjectMaterialFormData {
-  materialId?: string
+  materialId: string
   materialType: 'sarf' | 'celik' | 'membran' | 'halat' | 'fitil' | 'custom'
   name: string
   description?: string

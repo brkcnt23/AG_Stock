@@ -1,14 +1,13 @@
-// frontend/src/store/sarfStore.ts - Güncelleme
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sarfService } from '../api/sarfService'
-import type { Sarf } from '../types/sarf'
-import { getErrorMessage } from '../api/baseApiService'
+import type { SarfItem } from '../types/common'  // SarfItem kullan
+import { getErrorMessage } from '../utils/errorHelpers'
 
 export const useSarfStore = defineStore('sarf', () => {
-  // State
-  const items = ref<Sarf[]>([])
-  const currentItem = ref<Sarf | null>(null)
+  // State - SarfItem kullan
+  const items = ref<SarfItem[]>([])
+  const currentItem = ref<SarfItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   
@@ -47,27 +46,26 @@ export const useSarfStore = defineStore('sarf', () => {
     try {
       setLoading(true)
       clearError()
-      
-      console.log('🔄 Sarf verileri yükleniyor...', params)
 
-      const response = await sarfService.getSarfItems(params)
+      const response = await sarfService.getSarf(params)
 
       if (response.success) {
-        items.value = response.data
+        // API'den gelen Sarf'ı SarfItem'a dönüştür
+        const dataArray = Array.isArray(response.data) ? response.data : [response.data]
+        items.value = dataArray.map(item => ({
+          ...item,
+          malzemeTuru: 'sarf' as const  // SarfItem için zorunlu alan
+        }))
         
-        // Update pagination if provided
         if (response.pagination) {
           pagination.value = response.pagination
         }
-        
-        console.log('✅ Sarf verileri yüklendi:', response.data.length, 'adet')
       } else {
         throw new Error(response.message || 'Sarf verileri getirilemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
       setError(message)
-      console.error('❌ Sarf getirme hatası:', err)
       throw err
     } finally {
       setLoading(false)
@@ -83,8 +81,12 @@ export const useSarfStore = defineStore('sarf', () => {
       const response = await sarfService.getSarf(id)
 
       if (response.success) {
-        currentItem.value = response.data
-        return response.data
+        // API'den gelen Sarf'ı SarfItem'a dönüştür
+        currentItem.value = {
+          ...response.data,
+          malzemeTuru: 'sarf' as const  // SarfItem için zorunlu alan
+        }
+        return currentItem.value
       } else {
         throw new Error(response.message || 'Sarf malzeme bulunamadı')
       }
@@ -98,16 +100,27 @@ export const useSarfStore = defineStore('sarf', () => {
   }
 
   // Create item
-  const createItem = async (itemData: Partial<Sarf>) => {
+  const createItem = async (itemData: Partial<SarfItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await sarfService.createSarf(itemData)
+      // SarfItem'dan Sarf'a dönüştür (API için)
+      const apiData = {
+        ...itemData,
+        malzemeTuru: 'sarf' as const  // Ensure type
+      }
+
+      const response = await sarfService.createSarf(apiData)
 
       if (response.success) {
-        items.value.unshift(response.data)
-        return response.data
+        // API'den gelen Sarf'ı SarfItem'a dönüştür
+        const newItem: SarfItem = {
+          ...response.data,
+          malzemeTuru: 'sarf' as const
+        }
+        items.value.unshift(newItem)
+        return newItem
       } else {
         throw new Error(response.message || 'Sarf malzeme eklenemedi')
       }
@@ -121,24 +134,36 @@ export const useSarfStore = defineStore('sarf', () => {
   }
 
   // Update item
-  const updateItem = async (id: string, itemData: Partial<Sarf>) => {
+  const updateItem = async (id: string, itemData: Partial<SarfItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await sarfService.updateSarf(id, itemData)
+      // SarfItem'dan Sarf'a dönüştür (API için)
+      const apiData = {
+        ...itemData,
+        malzemeTuru: 'sarf' as const  // Ensure type
+      }
+
+      const response = await sarfService.updateSarf(id, apiData)
 
       if (response.success) {
+        // API'den gelen Sarf'ı SarfItem'a dönüştür
+        const updatedItem: SarfItem = {
+          ...response.data,
+          malzemeTuru: 'sarf' as const
+        }
+
         const index = items.value.findIndex(item => item._id === id || item.id === id)
         if (index !== -1) {
-          items.value[index] = response.data
+          items.value[index] = updatedItem
         }
         
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
-          currentItem.value = response.data
+          currentItem.value = updatedItem
         }
         
-        return response.data
+        return updatedItem
       } else {
         throw new Error(response.message || 'Sarf malzeme güncellenemedi')
       }
@@ -151,7 +176,7 @@ export const useSarfStore = defineStore('sarf', () => {
     }
   }
 
-  // Delete item
+  // Delete item - değişiklik yok
   const deleteItem = async (id: string) => {
     try {
       setLoading(true)
@@ -176,7 +201,18 @@ export const useSarfStore = defineStore('sarf', () => {
       setLoading(false)
     }
   }
- const reset = () => {
+
+  // Add missing methods for compatibility
+  const addItem = createItem
+  const statistics = ref({
+    totalItems: 0,
+    totalValue: 0,
+    lowStock: 0,
+    recentlyAdded: 0
+  })
+
+  // Reset store
+  const reset = () => {
     items.value = []
     currentItem.value = null
     loading.value = false
@@ -185,26 +221,33 @@ export const useSarfStore = defineStore('sarf', () => {
       page: 1,
       limit: 20,
       totalCount: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false
     }
   }
 
   return {
+    // State
     items,
     currentItem,
     loading,
     error,
     pagination,
+    statistics,
+    
+    // Computed
     hasData,
     isLoading,
     hasError,
+    
+    // Actions
     fetchItems,
     fetchItem,
     createItem,
     updateItem,
     deleteItem,
+    addItem,
     clearError,
     reset
   }

@@ -364,7 +364,7 @@ import FiltersSection from '../components/FiltersSection.vue'
 import BaseDataTable from '../components/BaseDataTable.vue'
 import BaseModal from '../components/BaseModal.vue'
 import MaterialForm from '../components/MaterialForm.vue'
-
+import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
 // Store
 const store = useMembranStore()
 

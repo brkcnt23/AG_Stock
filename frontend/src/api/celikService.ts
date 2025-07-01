@@ -1,49 +1,50 @@
 import { BaseApiService } from './baseApiService'
-import type { Celik } from '../types/celik'
+import type { CelikItem } from '../types/celik'
 
 class CelikService extends BaseApiService {
   constructor() {
     super('/celik')
   }
 
-  async getCelikItems(params?: {
+  async getCeliks(params?: {
     page?: number
     limit?: number
     search?: string
     status?: string
     kalite?: string
     tip?: string
-    proje?: string
     sortBy?: string
     sortOrder?: 'asc' | 'desc'
-    minPrice?: number
-    maxPrice?: number
   }) {
-    return this.getItems<Celik>(params)
+    return this.getItems<CelikItem>(params)
   }
 
   async getCelik(id: string) {
-    return this.getItem<Celik>(id)
+    return this.getItem<CelikItem>(id)
   }
 
-  async createCelik(data: Partial<Celik>) {
-    return this.createItem<Celik>(data)
+  async createCelik(data: Partial<CelikItem>) {
+    return this.createItem<CelikItem>(data)
   }
 
-  async updateCelik(id: string, data: Partial<Celik>) {
-    return this.updateItem<Celik>(id, data)
+  async updateCelik(id: string, data: Partial<CelikItem>) {
+    return this.updateItem<CelikItem>(id, data)
   }
 
   async deleteCelik(id: string) {
-    return this.deleteItem<Celik>(id)
+    return this.deleteItem<CelikItem>(id)
   }
 
   async getCelikStats() {
-    return this.getStats()
-  }
-
-  async bulkCelikOperations(operation: string, items: string[], updateData?: any) {
-    return this.bulkOperations(operation, items, updateData)
+    return this.getStats<{
+      totalCount: number
+      activeCount: number
+      passiveCount: number
+      totalValue: number
+      lowStockCount: number
+      outOfStockCount: number
+      recentCount: number
+    }>()
   }
 }
 

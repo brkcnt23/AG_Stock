@@ -2,62 +2,49 @@
 export interface Membran {
   _id?: string
   id?: string
-  
-  // Temel Bilgiler
   malzemeTuru: string
   malzemeCinsi: string
   kalite?: string
   aciklama?: string
-  
-  // Boyutlar
-  en?: number // mm
-  boy?: number // mm
-  kalinlik?: number // mm
-  cap?: number // mm (circular membranes için)
-  alan?: number // m2
-  
-  // Teknik Özellikler
-  basincDirenci?: number // bar
-  sicaklikDirenci?: number // °C
-  kimyasalDirenç?: string
-  esneklik?: string
+  en?: number
+  boy?: number
+  kalinlik?: number
+  paletNo?: string
+  marka?: string
+  model?: string
   renk?: string
-  yuzeyTipi?: string
-  
-  // Stok Bilgileri
-  adet: number
-  kalanMiktar: number
-  birim: string
-  stokKodu?: string
-  
-  // Lokasyon
-  depoYeri?: string
-  rafNo?: string
-  bolum?: string
-  
-  // Proje ve Durum
-  proje: string
-  durumu: string
-  
-  // Fiyat Bilgileri
+  renkKodu?: string
+  partiNo?: string
+  seriNo?: string
+  topSayisi?: number
+  topUzunlugu?: number
+  toplamUzunluk?: number
+  alan?: number
+  mesh?: boolean
+  durumu?: 'Aktif' | 'Pasif'
+  sahibi?: string
+  note?: string
+  tip?: string
   satinAlisFiyati?: number
+  rafFiyati?: number
+  dovizKur?: number
   paraBirimi?: string
   tedarikci?: string
-  
-  // Tarihler
-  girisYarihi?: string
-  sonKullanimTarihi?: string
+  proje?: string
+  rafNo?: string
+  girisTarihi?: string
+  satinAlisTarihi?: string | Date
   createdAt?: string
   updatedAt?: string
-  
-  // Ek Bilgiler
-  notlar?: string
-  resimUrl?: string
-  sertifika?: string
-  
-  // Rezervasyon
-  rezerveEdilen?: number
-  kullanilanMiktar?: number
+  imDosyaNo?: string
+  izlNo?: string
+}
+
+// MembranItem extends Membran with required fields for store compatibility
+export interface MembranItem extends Membran {
+  adet: number           // REQUIRED for store compatibility
+  kalanMiktar: number    // REQUIRED for store compatibility  
+  birim: string          // REQUIRED for store compatibility
 }
 
 export interface MembranFilter {
@@ -125,6 +112,24 @@ export interface MembranStats {
   recentMovements: number
   lastUpdate: string
 }
+// frontend/src/types/membran.ts
+export interface MembranItem {
+  _id: string
+  malzemeTuru: string
+  malzemeCinsi: string
+  kalite: string
+  topSayisi: number
+  rafFiyati: number
+  aciklama?: string
+  durumu: 'Aktif' | 'Pasif'
+  proje: string
+  stokKodu?: string
+  tedarikci?: string
+  depo?: string
+  createdAt: string
+  updatedAt: string
+}
+
 
 export interface MembranFormData {
   malzemeTuru: string

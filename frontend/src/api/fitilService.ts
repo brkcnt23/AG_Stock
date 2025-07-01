@@ -1,49 +1,50 @@
 import { BaseApiService } from './baseApiService'
-import type { Fitil } from '../types/fitil'
+import type { FitilItem } from '../types/fitil'
 
 class FitilService extends BaseApiService {
   constructor() {
     super('/fitil')
   }
 
-  async getFitilItems(params?: {
+  async getFitils(params?: {
     page?: number
     limit?: number
     search?: string
     status?: string
     malzeme?: string
     cins?: string
-    proje?: string
     sortBy?: string
     sortOrder?: 'asc' | 'desc'
-    minPrice?: number
-    maxPrice?: number
   }) {
-    return this.getItems<Fitil>(params)
+    return this.getItems<FitilItem>(params)
   }
 
   async getFitil(id: string) {
-    return this.getItem<Fitil>(id)
+    return this.getItem<FitilItem>(id)
   }
 
-  async createFitil(data: Partial<Fitil>) {
-    return this.createItem<Fitil>(data)
+  async createFitil(data: Partial<FitilItem>) {
+    return this.createItem<FitilItem>(data)
   }
 
-  async updateFitil(id: string, data: Partial<Fitil>) {
-    return this.updateItem<Fitil>(id, data)
+  async updateFitil(id: string, data: Partial<FitilItem>) {
+    return this.updateItem<FitilItem>(id, data)
   }
 
   async deleteFitil(id: string) {
-    return this.deleteItem<Fitil>(id)
+    return this.deleteItem<FitilItem>(id)
   }
 
   async getFitilStats() {
-    return this.getStats()
-  }
-
-  async bulkFitilOperations(operation: string, items: string[], updateData?: any) {
-    return this.bulkOperations(operation, items, updateData)
+    return this.getStats<{
+      totalCount: number
+      activeCount: number
+      passiveCount: number
+      totalValue: number
+      lowStockCount: number
+      outOfStockCount: number
+      recentCount: number
+    }>()
   }
 }
 

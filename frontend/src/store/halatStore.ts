@@ -1,20 +1,18 @@
-// frontend/src/store/halatStore.ts - Clean Pinia store without MongoDB
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { halatService } from '../api/halatService'
-import type { HalatItem, HalatFilter, HalatStats, CreateHalatData, UpdateHalatData, HalatStockOperation } from '../types/halat'
-import type { ApiResponse } from '../api/baseApiService'
-import { getErrorMessage } from '../api/baseApiService'
+import type { HalatItem } from '../types/halat'
+import { getErrorMessage } from '../utils/errorHelpers'
 
 export const useHalatStore = defineStore('halat', () => {
   // State
-  const halats = ref<HalatItem[]>([])
-  const currentHalat = ref<HalatItem | null>(null)
-  const stats = ref<HalatStats | null>(null)
+  const items = ref<HalatItem[]>([])
+  const halats = ref<HalatItem[]>([])  // Alias for compatibility
+  const currentItem = ref<HalatItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   
-  // Pagination state
+  // Pagination
   const pagination = ref({
     page: 1,
     limit: 20,
@@ -23,35 +21,16 @@ export const useHalatStore = defineStore('halat', () => {
     hasNextPage: false,
     hasPrevPage: false
   })
-  
-  // Filters state
-  const filters = ref<HalatFilter>({
-    search: '',
-    status: '',
-    type: '',
-    tedarikci: '',
-    depo: ''
-  })
 
-  // Computed properties
-  const totalItems = computed(() => pagination.value.totalCount)
-  
-  const inStockHalats = computed(() => 
-    halats.value.filter(h => h.stok > 0)
-  )
-  
-  const outOfStockHalats = computed(() => 
-    halats.value.filter(h => h.stok === 0)
-  )
-  
-  const criticalStockHalats = computed(() => 
-    halats.value.filter(h => h.stok > 0 && h.stok <= (h.minStokSeviyesi || 5))
-  )
-  
-  const stockSufficiency = computed(() => {
-    if (totalItems.value === 0) return 100
-    return Math.round((inStockHalats.value.length / totalItems.value) * 100)
-  })
+  // Sync items and halats
+  const syncArrays = () => {
+    halats.value = [...items.value]
+  }
+
+  // Computed
+  const hasData = computed(() => items.value.length > 0)
+  const isLoading = computed(() => loading.value)
+  const hasError = computed(() => error.value !== null)
 
   // Actions
   const setLoading = (value: boolean) => {
@@ -68,39 +47,24 @@ export const useHalatStore = defineStore('halat', () => {
     error.value = null
   }
 
-  // Fetch halats with pagination and filtering
-  const fetchHalats = async (params?: {
-    page?: number
-    limit?: number
-    search?: string
-    status?: string
-    type?: string
-    sortBy?: string
-    sortOrder?: 'asc' | 'desc'
-  }) => {
+  // Fetch items
+  const fetchItems = async (params?: any) => {
     try {
       setLoading(true)
-      
-      const mergedParams = { ...filters.value, ...params }
-      // Only allow valid status values
-      const validStatuses = ['stokta', 'tukendi', 'kritik']
-      if (mergedParams.status && !validStatuses.includes(mergedParams.status)) {
-        mergedParams.status = undefined
+      clearError()
+
+      const response = await halatService.getHalats(params)
+
+      if (response.success) {
+        items.value = response.data
+        syncArrays()
+        
+        if (response.pagination) {
+          pagination.value = response.pagination
+        }
+      } else {
+        throw new Error(response.message || 'Halat verileri getirilemedi')
       }
-      // Explicitly cast status to the correct type
-      const typedParams = {
-        ...mergedParams,
-        status: mergedParams.status as 'stokta' | 'tukendi' | 'kritik' | undefined
-      }
-      const response = await halatService.getHalats(typedParams)
-      
-      halats.value = response.data
-      
-      if (response.pagination) {
-        pagination.value = response.pagination
-      }
-      
-      return response
     } catch (err) {
       const message = getErrorMessage(err)
       setError(message)
@@ -110,63 +74,20 @@ export const useHalatStore = defineStore('halat', () => {
     }
   }
 
-  // Fetch single halat
-  const fetchHalat = async (id: string) => {
+  // Get single item
+  const fetchItem = async (id: string) => {
     try {
       setLoading(true)
-      
+      clearError()
+
       const response = await halatService.getHalat(id)
-      currentHalat.value = response.data
-      
-      return response
-    } catch (err) {
-      const message = getErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  // Create new halat
-  const createHalat = async (data: CreateHalatData) => {
-    try {
-      setLoading(true)
-      
-      const response = await halatService.createHalat(data)
-      
-      // Add to local state
-      halats.value.unshift(response.data)
-      pagination.value.totalCount++
-      
-      return response
-    } catch (err) {
-      const message = getErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Update halat
-  const updateHalat = async (id: string, data: UpdateHalatData) => {
-    try {
-      setLoading(true)
-      
-      const response = await halatService.updateHalat(id, data)
-      
-      // Update local state
-      const index = halats.value.findIndex(h => h._id === id || h.id === id)
-      if (index !== -1) {
-        halats.value[index] = response.data
+      if (response.success) {
+        currentItem.value = response.data
+        return response.data
+      } else {
+        throw new Error(response.message || 'Halat malzeme bulunamadı')
       }
-      
-      if (currentHalat.value && (currentHalat.value._id === id || currentHalat.value.id === id)) {
-        currentHalat.value = response.data
-      }
-      
-      return response
     } catch (err) {
       const message = getErrorMessage(err)
       setError(message)
@@ -176,22 +97,81 @@ export const useHalatStore = defineStore('halat', () => {
     }
   }
 
-  // Delete halat
-  const deleteHalat = async (id: string) => {
+  // Create item
+  const createItem = async (itemData: Partial<HalatItem>) => {
     try {
       setLoading(true)
-      
+      clearError()
+
+      const response = await halatService.createHalat(itemData)
+
+      if (response.success) {
+        items.value.unshift(response.data)
+        syncArrays()
+        return response.data
+      } else {
+        throw new Error(response.message || 'Halat malzeme eklenemedi')
+      }
+    } catch (err) {
+      const message = getErrorMessage(err)
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Update item
+  const updateItem = async (id: string, itemData: Partial<HalatItem>) => {
+    try {
+      setLoading(true)
+      clearError()
+
+      const response = await halatService.updateHalat(id, itemData)
+
+      if (response.success) {
+        const index = items.value.findIndex(item => item._id === id || item.id === id)
+        if (index !== -1) {
+          items.value[index] = response.data
+        }
+        
+        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
+          currentItem.value = response.data
+        }
+        
+        syncArrays()
+        return response.data
+      } else {
+        throw new Error(response.message || 'Halat malzeme güncellenemedi')
+      }
+    } catch (err) {
+      const message = getErrorMessage(err)
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Delete item
+  const deleteItem = async (id: string) => {
+    try {
+      setLoading(true)
+      clearError()
+
       const response = await halatService.deleteHalat(id)
-      
-      // Remove from local state
-      halats.value = halats.value.filter(h => h._id !== id && h.id !== id)
-      pagination.value.totalCount--
-      
-      if (currentHalat.value && (currentHalat.value._id === id || currentHalat.value.id === id)) {
-        currentHalat.value = null
+
+      if (response.success) {
+        items.value = items.value.filter(item => item._id !== id && item.id !== id)
+        
+        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
+          currentItem.value = null
+        }
+        
+        syncArrays()
+      } else {
+        throw new Error(response.message || 'Halat malzeme silinemedi')
       }
-      
-      return response
     } catch (err) {
       const message = getErrorMessage(err)
       setError(message)
@@ -201,115 +181,21 @@ export const useHalatStore = defineStore('halat', () => {
     }
   }
 
-  // Update stock
-  const updateStock = async (id: string, stockOperation: HalatStockOperation) => {
-    try {
-      setLoading(true)
-      
-      const response = await halatService.updateHalatStock(id, stockOperation)
-      
-      // Update local state
-      const index = halats.value.findIndex(h => h._id === id || h.id === id)
-      if (index !== -1) {
-        halats.value[index] = response.data
-      }
-      
-      if (currentHalat.value && (currentHalat.value._id === id || currentHalat.value.id === id)) {
-        currentHalat.value = response.data
-      }
-      
-      return response
-    } catch (err) {
-      const message = getErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Fetch statistics
-  const fetchStats = async () => {
-    try {
-      const response = await halatService.getHalatStats()
-      stats.value = response.data
-      return response
-    } catch (err) {
-      const message = getErrorMessage(err)
-      console.warn('Stats fetch failed:', message)
-      // Don't set error for stats as it's not critical
-    }
-  }
-
-  // Update filters
-  const updateFilters = (newFilters: Partial<HalatFilter>) => {
-    filters.value = { ...filters.value, ...newFilters }
-  }
-
-  const resetFilters = () => {
-    filters.value = {
-      search: '',
-      status: '',
-      type: '',
-      tedarikci: '',
-      depo: ''
-    }
-  }
-
-  // Pagination helpers
-  const setPage = (page: number) => {
-    pagination.value.page = page
-  }
-
-  const setLimit = (limit: number) => {
-    pagination.value.limit = limit
-    pagination.value.page = 1 // Reset to first page
-  }
-
-  // Export data
-  const exportHalats = (data: HalatItem[] = halats.value) => {
-    try {
-      const csvData = data.map(halat => ({
-        'Ad': halat.name,
-        'Kalite': halat.kalite || '',
-        'Cins': halat.cins,
-        'Çap (mm)': halat.cap,
-        'Uzunluk (m)': halat.uzunluk || '',
-        'Stok': halat.stok,
-        'Birim': halat.birim,
-        'Birim Fiyat': halat.birimFiyat || '',
-        'Para Birimi': halat.parabirimi || '',
-        'Tedarikçi': halat.tedarikci || '',
-        'Depo': halat.depo || '',
-        'Raf': halat.raf || '',
-        'Açıklama': halat.aciklama || ''
-      }))
-      
-      const csvString = [
-        Object.keys(csvData[0]).join(','),
-        ...csvData.map(row => Object.values(row).join(','))
-      ].join('\n')
-      
-      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `halat-listesi-${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error('Export failed:', err)
-      throw new Error('Export işlemi başarısız')
-    }
-  }
+  // Add missing methods for compatibility
+  const addItem = createItem
+  const updateHalat = updateItem  // Alias for compatibility
+  const statistics = ref({
+    totalItems: 0,
+    totalValue: 0,
+    lowStock: 0,
+    recentlyAdded: 0
+  })
 
   // Reset store
   const reset = () => {
+    items.value = []
     halats.value = []
-    currentHalat.value = null
-    stats.value = null
+    currentItem.value = null
     loading.value = false
     error.value = null
     pagination.value = {
@@ -320,39 +206,31 @@ export const useHalatStore = defineStore('halat', () => {
       hasNextPage: false,
       hasPrevPage: false
     }
-    resetFilters()
   }
 
   return {
     // State
-    halats,
-    currentHalat,
-    stats,
+    items,
+    halats,        // ADDED: halats array for compatibility
+    currentItem,
     loading,
     error,
     pagination,
-    filters,
+    statistics,    // ADDED: statistics
     
     // Computed
-    totalItems,
-    inStockHalats,
-    outOfStockHalats,
-    criticalStockHalats,
-    stockSufficiency,
+    hasData,
+    isLoading,
+    hasError,
     
     // Actions
-    fetchHalats,
-    fetchHalat,
-    createHalat,
-    updateHalat,
-    deleteHalat,
-    updateStock,
-    fetchStats,
-    updateFilters,
-    resetFilters,
-    setPage,
-    setLimit,
-    exportHalats,
+    fetchItems,
+    fetchItem,
+    createItem,
+    updateItem,
+    updateHalat,   // ADDED: updateHalat alias
+    deleteItem,
+    addItem,       // ADDED: addItem alias
     clearError,
     reset
   }

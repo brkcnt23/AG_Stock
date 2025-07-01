@@ -22,6 +22,8 @@ export interface Fitil {
   kalanMiktar: number
   birim: string
   stokKodu?: string
+  girisMiktar?: number
+  cikisMiktar?: number
   
   // Lokasyon
   depoYeri?: string
@@ -38,7 +40,7 @@ export interface Fitil {
   tedarikci?: string
   
   // Tarihler
-  girisYarihi?: string
+  girisTarihi?: string
   sonKullanimTarihi?: string
   createdAt?: string
   updatedAt?: string
@@ -106,6 +108,27 @@ export interface FitilStats {
   recentMovements: number
   lastUpdate: string
 }
+
+// frontend/src/types/fitil.ts
+export interface FitilItem {
+  _id: string
+  malzeme: string
+  cins: string
+  kalite: string
+  adet: number
+  kalanMiktar: number
+  birim: string
+  satinAlisFiyati: number
+  rafFiyati?: number
+  aciklama?: string
+  durumu: 'Aktif' | 'Pasif'
+  proje: string
+  stokKodu?: string
+  renk?: string
+  createdAt: string
+  updatedAt: string
+}
+
 
 export interface FitilFormData {
   malzeme: string

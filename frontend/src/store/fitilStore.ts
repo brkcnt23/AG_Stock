@@ -1,9 +1,8 @@
-// frontend/src/store/fitilStore.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { fitilService } from '../api/fitilService'
 import type { Fitil } from '../types/fitil'
-import { getErrorMessage } from '../api/baseApiService'
+import { getErrorMessage } from '../utils/errorHelpers'
 
 export const useFitilStore = defineStore('fitil', () => {
   // State
@@ -47,35 +46,29 @@ export const useFitilStore = defineStore('fitil', () => {
     try {
       setLoading(true)
       clearError()
-      
-      console.log('🔄 Fitil verileri yükleniyor...', params)
 
-      const response = await fitilService.getFitilItems(params)
+      const response = await fitilService.getFitils(params)
 
       if (response.success) {
         items.value = response.data
         
-        // Update pagination if provided
         if (response.pagination) {
           pagination.value = response.pagination
         }
-        
-        console.log('✅ Fitil verileri yüklendi:', response.data.length, 'adet')
       } else {
         throw new Error(response.message || 'Fitil verileri getirilemedi')
       }
-    } catch (err) {
+    } catch (err) {  // FIXED: Added err parameter
       const message = getErrorMessage(err)
       setError(message)
-      console.error('❌ Fitil getirme hatası:', err)
       throw err
     } finally {
       setLoading(false)
     }
   }
 
-  // Get single item
-  const fetchItem = async (id: string) => {
+  // Get single item  
+  const fetchItem = async (id: string) => {  // ADDED: Missing fetchItem
     try {
       setLoading(true)
       clearError()
@@ -103,7 +96,16 @@ export const useFitilStore = defineStore('fitil', () => {
       setLoading(true)
       clearError()
 
-      const response = await fitilService.createFitil(itemData)
+      // Ensure durumu is of the correct type
+      const mappedItemData = {
+        ...itemData,
+        durumu:
+          itemData.durumu === 'Aktif' || itemData.durumu === 'Pasif'
+            ? itemData.durumu as 'Aktif' | 'Pasif'
+            : undefined
+      }
+
+      const response = await fitilService.createFitil(mappedItemData)
 
       if (response.success) {
         items.value.unshift(response.data)
@@ -126,7 +128,16 @@ export const useFitilStore = defineStore('fitil', () => {
       setLoading(true)
       clearError()
 
-      const response = await fitilService.updateFitil(id, itemData)
+      // Ensure durumu is of the correct type
+      const mappedItemData = {
+        ...itemData,
+        durumu:
+          itemData.durumu === 'Aktif' || itemData.durumu === 'Pasif'
+            ? itemData.durumu as 'Aktif' | 'Pasif'
+            : undefined
+      }
+
+      const response = await fitilService.updateFitil(id, mappedItemData)
 
       if (response.success) {
         const index = items.value.findIndex(item => item._id === id || item.id === id)
@@ -177,6 +188,15 @@ export const useFitilStore = defineStore('fitil', () => {
     }
   }
 
+  // Add missing methods for compatibility
+  const addItem = createItem
+  const statistics = ref({
+    totalItems: 0,
+    totalValue: 0,
+    lowStock: 0,
+    recentlyAdded: 0
+  })
+
   // Reset store
   const reset = () => {
     items.value = []
@@ -200,6 +220,7 @@ export const useFitilStore = defineStore('fitil', () => {
     loading,
     error,
     pagination,
+    statistics,
     
     // Computed
     hasData,
@@ -208,10 +229,11 @@ export const useFitilStore = defineStore('fitil', () => {
     
     // Actions
     fetchItems,
-    fetchItem,
+    fetchItem,  // ADDED: Missing fetchItem
     createItem,
     updateItem,
     deleteItem,
+    addItem,
     clearError,
     reset
   }

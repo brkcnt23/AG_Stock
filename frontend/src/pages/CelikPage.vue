@@ -1,60 +1,24 @@
 <!-- pages/CelikPage.vue - DÜZELTİLMİŞ -->
 <template>
   <div class="celik-page">
-    <PageHeader 
-      title="🔧 Çelik Malzeme Yönetimi"
-      subtitle="Asma Germe Sistemleri - Çelik Malzeme Takibi"
-      item-type="Çelik Malzeme"
-      export-label="Çelik Raporu"
-      @add-item="openAddModal"
-      @export="exportStock"
-    />
+    <PageHeader title="🔧 Çelik Malzeme Yönetimi" subtitle="Asma Germe Sistemleri - Çelik Malzeme Takibi"
+      item-type="Çelik Malzeme" export-label="Çelik Raporu" @add-item="openAddModal" @export="exportStock" />
 
-    <StatsGrid 
-      :statistics="store.statistics" 
-      item-type="Çelik Malzeme"
-    />
+    <StatsGrid :statistics="store.statistics" item-type="Çelik Malzeme" />
 
-    <FiltersSection 
-      :filters="filters"
-      :search-text="searchText"
-      :malzeme-cinsi-options="celikCinsiOptions"
-      malzeme-cinsi-label="Çelik Cinsi"
-      search-placeholder="Kalite, boyut, proje ara..."
-      @filter-change="onFilterChange"
-      @search-change="onSearchChange"
-      @clear-filters="clearFilters"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-    />
+    <FiltersSection :filters="filters" :search-text="searchText" :malzeme-cinsi-options="celikCinsiOptions"
+      malzeme-cinsi-label="Çelik Cinsi" search-placeholder="Kalite, boyut, proje ara..." @filter-change="onFilterChange"
+      @search-change="onSearchChange" @clear-filters="clearFilters" @show-stock-only="showOnlyStock"
+      @show-project-assigned="showProjectAssigned" />
 
-    <BaseDataTable
-      title="📋 Çelik Malzeme Listesi"
-      item-type="çelik malzemesi"
-      :paginated-data="paginatedData"
-      :filtered-count="filteredItems.length"
-      :total-items="filteredItems.length"
-      :current-page="currentPage"
-      :items-per-page="itemsPerPage"
-      :current-density="viewDensity"
-      :loading="store.loading"
-      :error="store.error"
-      :selected-items="selectedItems"
-      @density-change="viewDensity = $event"
-      @items-change="onItemsChange"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-      @clear-filters="clearFilters"
-      @toggle-select-all="toggleSelectAll"
-      @item-select="onItemSelect"
-      @page-change="onPageChange"
-      @row-click="viewItemDetails"
-      @view-item="viewItemDetails"
-      @edit-item="editItem"
-      @duplicate-item="duplicateItem"
-      @delete-item="deleteItem"
-      @retry="fetchData"
-    >
+    <BaseDataTable title="📋 Çelik Malzeme Listesi" item-type="çelik malzemesi" :paginated-data="paginatedData"
+      :filtered-count="filteredItems.length" :total-items="filteredItems.length" :current-page="currentPage"
+      :items-per-page="itemsPerPage" :current-density="viewDensity" :loading="store.loading" :error="store.error"
+      :selected-items="selectedItems" @density-change="viewDensity = $event" @items-change="onItemsChange"
+      @show-stock-only="showOnlyStock" @show-project-assigned="showProjectAssigned" @clear-filters="clearFilters"
+      @toggle-select-all="toggleSelectAll" @item-select="onItemSelect" @page-change="onPageChange"
+      @row-click="viewItemDetails" @view-item="viewItemDetails" @edit-item="editItem" @duplicate-item="duplicateItem"
+      @delete-item="deleteItem" @retry="fetchData">
       <template #table-head>
         <th @click="sortBy('no')" class="sortable">
           No {{ getSortIcon('no') }}
@@ -82,14 +46,14 @@
         <!-- No -->
         <td class="no-cell">
           <div class="celik-no">
-            <strong>#{{ item.no || '-' }}</strong>
+            <strong>#{{ safeAccess(item, 'no', '-') }}</strong>
           </div>
         </td>
 
         <!-- Kalite/Standart -->
         <td class="material-info">
           <div class="material-main">
-            <strong class="quality">{{ item.kalite || 'Belirtilmemiş' }}</strong>
+            <strong class="quality">{{ safeAccess(item, 'kalite', 'Belirtilmemiş') }}</strong>
             <span class="material-type type-celik">
               Çelik
             </span>
@@ -98,8 +62,8 @@
 
         <!-- Çelik Tipi -->
         <td class="type-cell">
-          <span :class="getCelikTipiClass(item.tip)" class="type-badge">
-            {{ getCelikTipiLabel(item.tip) }}
+          <span :class="getCelikTipiClass(safeAccess(item, 'tip', ''))" class="type-badge">
+            {{ getCelikTipiLabel(safeAccess(item, 'tip', '')) }}
           </span>
         </td>
 
@@ -108,8 +72,8 @@
           <div class="dimensions-info">
             <div class="main-size">{{ formatMainDimensions(item) }}</div>
             <div class="sub-info" v-if="viewDensity !== 'compact'">
-              <span v-if="item.adet">{{ item.adet }} Adet</span>
-              <span v-if="item.uzunluk">• {{ item.uzunluk }}mm</span>
+              <span v-if="safeAccess(item, 'adet', 0)">{{ safeAccess(item, 'adet', 0) }} Adet</span>
+              <span v-if="safeAccess(item, 'uzunluk', 0)">• {{ safeAccess(item, 'uzunluk', 0) }}mm</span>
             </div>
           </div>
         </td>
@@ -119,15 +83,14 @@
           <div class="stock-display">
             <div class="stock-numbers">
               <span class="current" :class="getStockStatusClass(item)">
-                {{ item.kalanMiktar || item.adet || '0' }}
+                {{ safeAccess(item, 'kalanMiktar', safeAccess(item, 'adet', '0')) }}
               </span>
               <span class="separator">/</span>
-              <span class="total">{{ item.girisMiktar || item.adet || '0' }}</span>
+              <span class="total">{{ safeAccess(item, 'girisMiktar', safeAccess(item, 'adet', '0')) }}</span>
             </div>
             <div class="stock-bar">
-              <div class="stock-progress" 
-                   :style="{ width: getStockPercentage(item) + '%' }"
-                   :class="getStockStatusClass(item)">
+              <div class="stock-progress" :style="{ width: getStockPercentage(item) + '%' }"
+                :class="getStockStatusClass(item)">
               </div>
             </div>
             <div class="stock-label">
@@ -144,15 +107,17 @@
           <div class="purchase-details">
             <div class="price-main">
               <span class="price-amount">
-                {{ formatPrice(item.satinAlisFiyati, item.dovizKur) }}
+                {{ formatPrice(safeAccess(item, 'satinAlisFiyati', 0), safeAccess(item, 'dovizKur', 1)) }}
               </span>
             </div>
             <div class="price-details" v-if="viewDensity !== 'compact'">
-              <div v-if="item.dovizKur && item.dovizKur !== 1" class="exchange-info">
-                <small>{{ item.satinAlisFiyati }}{{ item.paraBirimi || '$' }} × {{ item.dovizKur }}</small>
+              <div v-if="safeAccess(item, 'dovizKur', 1) && safeAccess(item, 'dovizKur', 1) !== 1"
+                class="exchange-info">
+                <small>{{ safeAccess(item, 'satinAlisFiyati', 0) }}{{ safeAccess(item, 'paraBirimi', '$') }} × {{
+                  safeAccess(item, 'dovizKur', 1) }}</small>
               </div>
               <div class="supplier-info">
-                <small>{{ item.tedarikci || 'Tedarikçi belirtilmemiş' }}</small>
+                <small>{{ safeAccess(item, 'tedarikci', 'Tedarikçi belirtilmemiş') }}</small>
               </div>
             </div>
           </div>
@@ -161,13 +126,13 @@
         <!-- Proje/Lokasyon -->
         <td class="location-cell">
           <div class="location-info">
-            <div class="project-name">{{ item.proje || 'Stok' }}</div>
+            <div class="project-name">{{ safeAccess(item, 'proje', 'Stok') }}</div>
             <div class="shelf-location">
-              <span class="shelf-badge">{{ item.rafNo || 'Belirsiz' }}</span>
+              <span class="shelf-badge">{{ safeAccess(item, 'rafNo', 'Belirsiz') }}</span>
             </div>
             <div class="document-refs" v-if="viewDensity === 'detailed'">
-              <small v-if="item.imDosyaNo">İM: {{ item.imDosyaNo }}</small>
-              <small v-if="item.izlNo">İzl: {{ item.izlNo }}</small>
+              <small v-if="safeAccess(item, 'imDosyaNo', '')">İM: {{ safeAccess(item, 'imDosyaNo', '') }}</small>
+              <small v-if="safeAccess(item, 'izlNo', '')">İzl: {{ safeAccess(item, 'izlNo', '') }}</small>
             </div>
           </div>
         </td>
@@ -175,9 +140,9 @@
         <!-- Giriş Tarihi -->
         <td class="date-cell">
           <div class="date-info">
-            <div class="entry-date">{{ formatDate(item.girisTarihi) }}</div>
+            <div class="entry-date">{{ formatDate(safeAccess(item, 'girisTarihi', '')) }}</div>
             <div class="purchase-date" v-if="viewDensity !== 'compact'">
-              <small>Alış: {{ formatDate(item.satinAlisTarihi) }}</small>
+              <small>Alış: {{ formatDate(safeAccess(item, 'satinAlisTarihi', '')) }}</small>
             </div>
           </div>
         </td>
@@ -185,47 +150,26 @@
     </BaseDataTable>
 
     <!-- Add/Edit Modal -->
-    <BaseModal 
-      v-if="showModal"
-      :title="modalMode === 'add' ? '➕ Yeni Çelik Malzeme Ekle' : '✏️ Çelik Malzeme Düzenle'"
-      size="large"
-      @close="closeModal"
-    >
-      <MaterialForm
-        :mode="modalMode"
-        :item="editingItem"
-        :malzeme-cinsi-options="celikCinsiOptions"
-        @save="saveItem"
-        @cancel="closeModal"
-      >
+    <BaseModal v-if="showModal" :title="modalMode === 'add' ? '➕ Yeni Çelik Malzeme Ekle' : '✏️ Çelik Malzeme Düzenle'"
+      size="large" @close="closeModal">
+      <MaterialForm :mode="modalMode" :item="editingItem" :malzeme-cinsi-options="celikCinsiOptions" @save="saveItem"
+        @cancel="closeModal">
         <template #specificFields>
           <!-- Çelik özel alanları -->
           <div class="form-row">
             <div class="form-group">
               <label>Çelik No</label>
-              <input 
-                v-model="celikForm.no" 
-                type="number" 
-                placeholder="Çelik numarası"
-              >
+              <input v-model="celikForm.no" type="number" placeholder="Çelik numarası">
             </div>
 
             <div class="form-group">
               <label>Boru Çapı</label>
-              <input 
-                v-model="celikForm.boruCap" 
-                type="text" 
-                placeholder="Ø90, Ø100..."
-              >
+              <input v-model="celikForm.boruCap" type="text" placeholder="Ø90, Ø100...">
             </div>
-            
+
             <div class="form-group">
               <label>Et Kalınlığı</label>
-              <input 
-                v-model="celikForm.etKalınlık" 
-                type="text" 
-                placeholder="4mm, 6mm..."
-              >
+              <input v-model="celikForm.etKalınlık" type="text" placeholder="4mm, 6mm...">
             </div>
 
             <div class="form-group">
@@ -242,29 +186,17 @@
           <div class="form-row">
             <div class="form-group">
               <label>Adet</label>
-              <input 
-                v-model="celikForm.adet" 
-                type="number" 
-                placeholder="Kaç adet"
-              >
+              <input v-model="celikForm.adet" type="number" placeholder="Kaç adet">
             </div>
 
             <div class="form-group">
               <label>Uzunluk (mm)</label>
-              <input 
-                v-model="celikForm.uzunluk" 
-                type="number" 
-                placeholder="6000"
-              >
+              <input v-model="celikForm.uzunluk" type="number" placeholder="6000">
             </div>
 
             <div class="form-group full-width">
               <label>Açıklama</label>
-              <textarea 
-                v-model="celikForm.aciklama" 
-                rows="2"
-                placeholder="Ek açıklamalar..."
-              ></textarea>
+              <textarea v-model="celikForm.aciklama" rows="2" placeholder="Ek açıklamalar..."></textarea>
             </div>
           </div>
         </template>
@@ -283,6 +215,7 @@ import FiltersSection from '../components/FiltersSection.vue'
 import BaseDataTable from '../components/BaseDataTable.vue'
 import BaseModal from '../components/BaseModal.vue'
 import MaterialForm from '../components/MaterialForm.vue'
+import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
 
 // Store
 const store = useCelikStore()
@@ -329,25 +262,36 @@ const filters = reactive({
   rafNo: ''
 })
 
-// Computed
+// ✅ FIXED: filteredItems computed properly defined
 const filteredItems = computed(() => {
-  let items = store.items
+  let items = [...store.items] as any[]
 
-  // Search filter
+  // Search filter with safe access
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    items = items.filter((item: CelikItem) => 
-      item.kalite?.toLowerCase().includes(search) ||
-      item.boruCap?.toLowerCase().includes(search) ||
-      item.tip?.toLowerCase().includes(search) ||
-      item.proje?.toLowerCase().includes(search) ||
-      item.rafNo?.toLowerCase().includes(search) ||
-      item.tedarikci?.toLowerCase().includes(search) ||
-      item.aciklama?.toLowerCase().includes(search)
-    )
+    items = items.filter((item: any) => {
+      const searchableFields = [
+        safeAccess(item, 'kalite', ''),
+        safeAccess(item, 'boruCap', ''),
+        safeAccess(item, 'tip', ''),
+        safeAccess(item, 'proje', ''),
+        safeAccess(item, 'rafNo', ''),
+        safeAccess(item, 'tedarikci', ''),
+        safeAccess(item, 'aciklama', '')
+      ]
+
+      return searchableFields.some(field =>
+        field.toLowerCase().includes(search)
+      )
+    })
   }
 
-  // Apply filters
+  // ✅ FIXED: Malzeme türü filter - 'celik' not empty string
+  items = items.filter((item: any) =>
+    safeAccess(item, 'malzemeTuru', 'celik') === 'celik'
+  )
+
+  // Apply other filters
   Object.entries(filters).forEach(([key, value]) => {
     if (value) {
       if (key === 'proje' && value === '!Stok') {
@@ -375,7 +319,7 @@ const filteredItems = computed(() => {
   items.sort((a: any, b: any) => {
     const aVal = a[sortField.value] ?? ''
     const bVal = b[sortField.value] ?? ''
-    
+
     if (sortDirection.value === 'asc') {
       return aVal > bVal ? 1 : -1
     } else {
@@ -386,13 +330,14 @@ const filteredItems = computed(() => {
   return items
 })
 
+// ✅ FIXED: Now properly references filteredItems
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
   return filteredItems.value.slice(start, end)
 })
 
-// Methods - Standart metodlar (diğer sayfalardan kopyala)
+// Methods - Standart metodlar
 const fetchData = async () => {
   await store.fetchItems()
 }
@@ -456,7 +401,7 @@ const toggleSelectAll = () => {
   if (selectedItems.value.length === paginatedData.value.length) {
     selectedItems.value = []
   } else {
-    selectedItems.value = paginatedData.value.map(item => item._id || item.id || '')
+    selectedItems.value = paginatedData.value.map(item => ensureId(item))
   }
 }
 
@@ -477,7 +422,7 @@ const openAddModal = () => {
     no: undefined,
     boruCap: '',
     etKalınlık: '',
-    tip: '',
+    tip: undefined,
     adet: undefined,
     uzunluk: undefined,
     aciklama: ''
@@ -488,26 +433,26 @@ const openAddModal = () => {
 const editItem = (item: CelikItem) => {
   modalMode.value = 'edit'
   editingItem.value = item
-  // Fill çelik form with item data
+  // Fill çelik form with item data using safe access
   Object.assign(celikForm, {
-    no: item.no,
-    boruCap: item.boruCap || '',
-    etKalınlık: item.etKalınlık || '',
-    tip: (item.tip as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined) || undefined,
-    adet: item.adet,
-    uzunluk: item.uzunluk,
-    aciklama: item.aciklama || ''
+    no: safeAccess(item, 'no', undefined),
+    boruCap: safeAccess(item, 'boruCap', ''),
+    etKalınlık: safeAccess(item, 'etKalınlık', ''),
+    tip: safeAccess(item, 'tip', undefined) as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined,
+    adet: safeAccess(item, 'adet', undefined),
+    uzunluk: safeAccess(item, 'uzunluk', undefined),
+    aciklama: safeAccess(item, 'aciklama', '')
   })
   showModal.value = true
 }
 
 const duplicateItem = (item: CelikItem) => {
   modalMode.value = 'add'
-  editingItem.value = { 
-    ...item, 
-    _id: undefined, 
+  editingItem.value = {
+    ...item,
+    _id: undefined,
     id: undefined,
-    girisTarihi: new Date().toISOString().split('T')[0] 
+    girisTarihi: new Date().toISOString().split('T')[0]
   }
   showModal.value = true
 }
@@ -519,18 +464,18 @@ const closeModal = () => {
 
 const saveItem = async (itemData: CelikItem) => {
   try {
-    // Add çelik-specific fields
+    // ✅ FIXED: malzemeTuru should be 'celik' not 'çelik'
     const finalData = {
       ...itemData,
       ...celikForm,
       tip: celikForm.tip as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined,
-      malzemeTuru: 'çelik' as const
+      malzemeTuru: 'celik' as const  // FIXED: Use 'celik' not 'çelik'
     }
-    
+
     if (modalMode.value === 'add') {
       await store.addItem(finalData)
     } else {
-      await store.updateItem(itemData._id || itemData.id || '', finalData)
+      await store.updateItem(ensureId(itemData), finalData)
     }
     closeModal()
   } catch (error) {
@@ -540,10 +485,13 @@ const saveItem = async (itemData: CelikItem) => {
 }
 
 const deleteItem = async (item: CelikItem) => {
-  if (confirm(`"${item.kalite} - ${item.tip}" çelik malzemesini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
+  const kalite = safeAccess(item, 'kalite', 'Bilinmeyen')
+  const tip = safeAccess(item, 'tip', 'Bilinmeyen')
+
+  if (confirm(`"${kalite} - ${tip}" çelik malzemesini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
     try {
-      await store.deleteItem(item._id || item.id || '')
-      const itemId = item._id || item.id || ''
+      await store.deleteItem(ensureId(item))
+      const itemId = ensureId(item)
       selectedItems.value = selectedItems.value.filter(id => id !== itemId)
     } catch (error) {
       console.error('Delete error:', error)
@@ -552,44 +500,44 @@ const deleteItem = async (item: CelikItem) => {
   }
 }
 
-const viewItemDetails = (item: CelikItem) => {
+const viewItemDetails = (item: any) => {  // ✅ FIXED: Added type annotation
   const details = `
 🔧 ÇELİK MALZEME DETAYLARI
 
 ⚙️ Temel Bilgiler:
-• No: #${item.no || '-'}
-• Kalite: ${item.kalite || 'Belirtilmemiş'}
-• Tip: ${getCelikTipiLabel(item.tip ?? '')}
+• No: #${safeAccess(item, 'no', '-')}
+• Kalite: ${safeAccess(item, 'kalite', 'Belirtilmemiş')}
+• Tip: ${getCelikTipiLabel(safeAccess(item, 'tip', ''))}
 
 📏 Boyutlar:
-• Boru Çapı: ${item.boruCap || 'Belirtilmemiş'}
-• Et Kalınlığı: ${item.etKalınlık || 'Belirtilmemiş'}
-• Uzunluk: ${item.uzunluk ? item.uzunluk + 'mm' : 'Belirtilmemiş'}
-• Adet: ${item.adet || 0}
+• Boru Çapı: ${safeAccess(item, 'boruCap', 'Belirtilmemiş')}
+• Et Kalınlığı: ${safeAccess(item, 'etKalınlık', 'Belirtilmemiş')}
+• Uzunluk: ${safeAccess(item, 'uzunluk', 0) ? safeAccess(item, 'uzunluk', 0) + 'mm' : 'Belirtilmemiş'}
+• Adet: ${safeAccess(item, 'adet', 0)}
 
 📦 Stok Durumu:
-• Giriş: ${item.girisMiktar || item.adet || 0} ${item.birim || 'ADET'}
-• Çıkış: ${item.cikisMiktar || 0} ${item.birim || 'ADET'}
-• Kalan: ${item.kalanMiktar || item.adet || 0} ${item.birim || 'ADET'}
+• Giriş: ${safeAccess(item, 'girisMiktar', safeAccess(item, 'adet', 0))} ${safeAccess(item, 'birim', 'ADET')}
+• Çıkış: ${safeAccess(item, 'cikisMiktar', 0)} ${safeAccess(item, 'birim', 'ADET')}
+• Kalan: ${safeAccess(item, 'kalanMiktar', safeAccess(item, 'adet', 0))} ${safeAccess(item, 'birim', 'ADET')}
 • Durum: ${getStockStatusLabel(item)} (%${getStockPercentage(item)})
 
 💰 Fiyat Bilgileri:
-• Alış: ${formatPrice(item.satinAlisFiyati ?? 0, item.dovizKur)}
-${item.dovizKur && item.dovizKur !== 1 ? `• Döviz: ${item.satinAlisFiyati || 0} ${item.paraBirimi || 'USD'} × ${item.dovizKur}` : ''}
-• Tedarikçi: ${item.tedarikci || 'Belirtilmemiş'}
+• Alış: ${formatPrice(safeAccess(item, 'satinAlisFiyati', 0), safeAccess(item, 'dovizKur', 1))}
+${safeAccess(item, 'dovizKur', 1) && safeAccess(item, 'dovizKur', 1) !== 1 ? `• Döviz: ${safeAccess(item, 'satinAlisFiyati', 0)} ${safeAccess(item, 'paraBirimi', 'USD')} × ${safeAccess(item, 'dovizKur', 1)}` : ''}
+• Tedarikçi: ${safeAccess(item, 'tedarikci', 'Belirtilmemiş')}
 
 📍 Lokasyon:
-• Proje: ${item.proje || 'Stok'}
-• Raf: ${item.rafNo || 'Belirtilmemiş'}
-${item.imDosyaNo ? `• İM Dosya: ${item.imDosyaNo}` : ''}
-${item.izlNo ? `• İzleme: ${item.izlNo}` : ''}
+• Proje: ${safeAccess(item, 'proje', 'Stok')}
+• Raf: ${safeAccess(item, 'rafNo', 'Belirtilmemiş')}
+${safeAccess(item, 'imDosyaNo', '') ? `• İM Dosya: ${safeAccess(item, 'imDosyaNo', '')}` : ''}
+${safeAccess(item, 'izlNo', '') ? `• İzleme: ${safeAccess(item, 'izlNo', '')}` : ''}
 
 📅 Tarihler:
-• Giriş: ${formatDate(item.girisTarihi)}
-• Satın Alma: ${formatDate(typeof item.satinAlisTarihi === 'string' ? item.satinAlisTarihi : item.satinAlisTarihi?.toISOString?.())}
+• Giriş: ${formatDate(safeAccess(item, 'girisTarihi', ''))}
+• Satın Alma: ${formatDate(safeAccess(item, 'satinAlisTarihi', ''))}
 
 📝 Açıklama:
-${item.aciklama || 'Açıklama belirtilmemiş'}
+${safeAccess(item, 'aciklama', 'Açıklama belirtilmemiş')}
   `
   alert(details)
 }
@@ -597,22 +545,22 @@ ${item.aciklama || 'Açıklama belirtilmemiş'}
 const exportStock = () => {
   const csvContent = [
     'No,Kalite,Tip,Boru Çapı,Et Kalınlığı,Uzunluk,Adet,Stok,Birim,Fiyat,Tedarikci,Proje,Raf,Giriş Tarihi,Satın Alma Tarihi',
-    ...filteredItems.value.map(item => [
-      item.no || '',
-      item.kalite,
-      getCelikTipiLabel(item.tip ?? ''),
-      item.boruCap || '',
-      item.etKalınlık || '',
-      item.uzunluk || '',
-      item.adet || '',
-      item.kalanMiktar || item.adet || '',
-      item.birim || 'ADET',
-      formatPrice(item.satinAlisFiyati ?? 0, item.dovizKur ?? 1),
-      item.tedarikci || '',
-      item.proje || 'Stok',
-      item.rafNo,
-      formatDate(item.girisTarihi),
-      formatDate(item.satinAlisTarihi)
+    ...filteredItems.value.map((item: any) => [  // ✅ FIXED: Now references filteredItems
+      safeAccess(item, 'no', ''),
+      safeAccess(item, 'kalite', ''),
+      getCelikTipiLabel(safeAccess(item, 'tip', '')),
+      safeAccess(item, 'boruCap', ''),
+      safeAccess(item, 'etKalınlık', ''),
+      safeAccess(item, 'uzunluk', ''),
+      safeAccess(item, 'adet', ''),
+      safeAccess(item, 'kalanMiktar', safeAccess(item, 'adet', '')),
+      safeAccess(item, 'birim', 'ADET'),
+      formatPrice(safeAccess(item, 'satinAlisFiyati', 0), safeAccess(item, 'dovizKur', 1)),
+      safeAccess(item, 'tedarikci', ''),
+      safeAccess(item, 'proje', 'Stok'),
+      safeAccess(item, 'rafNo', ''),
+      formatDate(safeAccess(item, 'girisTarihi', '')),
+      formatDate(safeAccess(item, 'satinAlisTarihi', ''))
     ].join(','))
   ].join('\n')
 
@@ -628,8 +576,11 @@ const exportStock = () => {
 // Utility functions
 const formatMainDimensions = (item: any) => {
   const parts: string[] = []
-  if (item.boruCap) parts.push(item.boruCap)
-  if (item.etKalınlık) parts.push(`et: ${item.etKalınlık}`)
+  const boruCap = safeAccess(item, 'boruCap', '')
+  const etKalinlik = safeAccess(item, 'etKalınlık', '')
+
+  if (boruCap) parts.push(boruCap)
+  if (etKalinlik) parts.push(`et: ${etKalinlik}`)
   return parts.length > 0 ? parts.join(' • ') : 'Boyut belirtilmemiş'
 }
 
@@ -639,28 +590,14 @@ const formatPrice = (price: number, exchangeRate: number = 1) => {
   return `${tlPrice.toLocaleString('tr-TR')} ₺`
 }
 
-const formatDate = (dateStr?: string | Date) => {
+const formatDate = (dateStr: string) => {
   if (!dateStr) return 'Tarih belirtilmemiş'
-  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
-  return date.toLocaleDateString('tr-TR')
-}
-
-const getItemAge = (dateStr?: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffTime = Math.abs(now.getTime() - date.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffDays < 30) return `${diffDays} gün önce`
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`
-  return `${Math.floor(diffDays / 365)} yıl önce`
-}
-
-const getStockPercentage = (item: any) => {
-  const kalan = parseFloat(item.kalanMiktar || item.adet || '0')
-  const giris = parseFloat(item.girisMiktar || item.adet || '0')
-  return giris > 0 ? Math.round((kalan / giris) * 100) : 0
+  try {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('tr-TR')
+  } catch {
+    return 'Geçersiz tarih'
+  }
 }
 
 const getStockStatusClass = (item: any) => {
@@ -677,6 +614,12 @@ const getStockStatusLabel = (item: any) => {
   if (percentage < 10) return 'Kritik'
   if (percentage < 20) return 'Düşük'
   return 'Yeterli'
+}
+
+const getStockPercentage = (item: any) => {
+  const kalan = parseFloat(safeAccess(item, 'kalanMiktar', safeAccess(item, 'adet', '0')))
+  const giris = parseFloat(safeAccess(item, 'girisMiktar', safeAccess(item, 'adet', '0')))
+  return giris > 0 ? Math.round((kalan / giris) * 100) : 0
 }
 
 const getCelikTipiClass = (tip: string) => {
@@ -768,10 +711,25 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-.tip-siyah { background: #374151; color: white; }
-.tip-paslanmaz { background: #e5e7eb; color: #374151; }
-.tip-aluminyum { background: #e0e7ff; color: #3730a3; }
-.tip-other { background: #f9fafb; color: #6b7280; }
+.tip-siyah {
+  background: #374151;
+  color: white;
+}
+
+.tip-paslanmaz {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.tip-aluminyum {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.tip-other {
+  background: #f9fafb;
+  color: #6b7280;
+}
 
 /* Dimensions Cell */
 .dimensions-cell {
@@ -812,10 +770,21 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.stock-numbers .current.sufficient { color: #10b981; }
-.stock-numbers .current.low { color: #f59e0b; }
-.stock-numbers .current.critical { color: #ef4444; }
-.stock-numbers .current.empty { color: #9ca3af; }
+.stock-numbers .current.sufficient {
+  color: #10b981;
+}
+
+.stock-numbers .current.low {
+  color: #f59e0b;
+}
+
+.stock-numbers .current.critical {
+  color: #ef4444;
+}
+
+.stock-numbers .current.empty {
+  color: #9ca3af;
+}
 
 .separator {
   color: #9ca3af;
@@ -839,10 +808,21 @@ onMounted(() => {
   border-radius: 2px;
 }
 
-.stock-progress.sufficient { background: #10b981; }
-.stock-progress.low { background: #f59e0b; }
-.stock-progress.critical { background: #ef4444; }
-.stock-progress.empty { background: #9ca3af; }
+.stock-progress.sufficient {
+  background: #10b981;
+}
+
+.stock-progress.low {
+  background: #f59e0b;
+}
+
+.stock-progress.critical {
+  background: #ef4444;
+}
+
+.stock-progress.empty {
+  background: #9ca3af;
+}
 
 .stock-label {
   display: flex;
@@ -851,10 +831,21 @@ onMounted(() => {
   font-size: 11px;
 }
 
-.stock-label span.sufficient { color: #10b981; }
-.stock-label span.low { color: #f59e0b; }
-.stock-label span.critical { color: #ef4444; }
-.stock-label span.empty { color: #9ca3af; }
+.stock-label span.sufficient {
+  color: #10b981;
+}
+
+.stock-label span.low {
+  color: #f59e0b;
+}
+
+.stock-label span.critical {
+  color: #ef4444;
+}
+
+.stock-label span.empty {
+  color: #9ca3af;
+}
 
 .percentage {
   color: #9ca3af;
@@ -966,7 +957,7 @@ onMounted(() => {
   .celik-page {
     padding: 10px;
   }
-  
+
   .material-info,
   .dimensions-cell,
   .stock-cell,
@@ -974,7 +965,7 @@ onMounted(() => {
   .location-cell {
     min-width: auto;
   }
-  
+
   .form-group.full-width {
     grid-column: span 1;
   }

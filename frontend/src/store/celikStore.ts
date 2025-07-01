@@ -1,17 +1,18 @@
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { celikService } from '../api/celikService'
-import type { Celik } from '../types/celik'
-import { getErrorMessage } from '../api/baseApiService'
+import type { CelikItem } from '../types/common'
+import { getErrorMessage } from '../utils/errorHelpers'
+import { convertToStoreItem, convertFromStoreItem } from '../utils/storeHelpers'
 
 export const useCelikStore = defineStore('celik', () => {
-  // State
-  const items = ref<Celik[]>([])
-  const currentItem = ref<Celik | null>(null)
+  // State - Use BaseItem with safe typing
+  const items = ref<CelikItem[]>([])
+  const currentItem = ref<CelikItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   
-  // Pagination
   const pagination = ref({
     page: 1,
     limit: 20,
@@ -21,12 +22,20 @@ export const useCelikStore = defineStore('celik', () => {
     hasPrevPage: false
   })
 
+  // Statistics
+  const statistics = ref({
+    totalItems: 0,
+    totalValue: 0,
+    lowStock: 0,
+    recentlyAdded: 0
+  })
+
   // Computed
   const hasData = computed(() => items.value.length > 0)
   const isLoading = computed(() => loading.value)
   const hasError = computed(() => error.value !== null)
 
-  // Actions
+  // Helper functions
   const setLoading = (value: boolean) => {
     loading.value = value
     if (value) error.value = null
@@ -41,72 +50,50 @@ export const useCelikStore = defineStore('celik', () => {
     error.value = null
   }
 
-  // Fetch items
+  // Fetch items with safe conversion
   const fetchItems = async (params?: any) => {
     try {
       setLoading(true)
       clearError()
-      
-      console.log('🔄 Çelik verileri yükleniyor...', params)
 
-      const response = await celikService.getCelikItems(params)
+      const response = await celikService.getCeliks(params)
 
       if (response.success) {
-        items.value = response.data
+        // Convert API items to store items with type safety
+        items.value = response.data.map((item: any) => 
+          convertToStoreItem<CelikItem>(item, 'celik')
+        )
         
-        // Update pagination if provided
         if (response.pagination) {
           pagination.value = response.pagination
         }
-        
-        console.log('✅ Çelik verileri yüklendi:', response.data.length, 'adet')
       } else {
         throw new Error(response.message || 'Çelik verileri getirilemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
       setError(message)
-      console.error('❌ Çelik getirme hatası:', err)
       throw err
     } finally {
       setLoading(false)
     }
   }
 
-  // Get single item
-  const fetchItem = async (id: string) => {
+  // Create item with safe conversion
+  const createItem = async (itemData: Partial<CelikItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await celikService.getCelik(id)
+      // Convert store item to API format
+      const apiData = convertFromStoreItem(itemData)
+
+      const response = await celikService.createCelik(apiData)
 
       if (response.success) {
-        currentItem.value = response.data
-        return response.data
-      } else {
-        throw new Error(response.message || 'Çelik malzeme bulunamadı')
-      }
-    } catch (err) {
-      const message = getErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Create item
-  const createItem = async (itemData: Partial<Celik>) => {
-    try {
-      setLoading(true)
-      clearError()
-
-      const response = await celikService.createCelik(itemData)
-
-      if (response.success) {
-        items.value.unshift(response.data)
-        return response.data
+        const newItem = convertToStoreItem<CelikItem>(response.data, 'celik')
+        items.value.unshift(newItem)
+        return newItem
       } else {
         throw new Error(response.message || 'Çelik malzeme eklenemedi')
       }
@@ -119,25 +106,30 @@ export const useCelikStore = defineStore('celik', () => {
     }
   }
 
-  // Update item
-  const updateItem = async (id: string, itemData: Partial<Celik>) => {
+  // Update item with safe conversion
+  const updateItem = async (id: string, itemData: Partial<CelikItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await celikService.updateCelik(id, itemData)
+      const apiData = convertFromStoreItem(itemData)
+      const response = await celikService.updateCelik(id, apiData)
 
       if (response.success) {
-        const index = items.value.findIndex(item => item._id === id || item.id === id)
+        const updatedItem = convertToStoreItem<CelikItem>(response.data, 'celik')
+        
+        const index = items.value.findIndex(item => 
+          (item._id || item.id) === id
+        )
         if (index !== -1) {
-          items.value[index] = response.data
+          items.value[index] = updatedItem
         }
         
-        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
-          currentItem.value = response.data
+        if (currentItem.value && ((currentItem.value._id || currentItem.value.id) === id)) {
+          currentItem.value = updatedItem
         }
         
-        return response.data
+        return updatedItem
       } else {
         throw new Error(response.message || 'Çelik malzeme güncellenemedi')
       }
@@ -159,9 +151,11 @@ export const useCelikStore = defineStore('celik', () => {
       const response = await celikService.deleteCelik(id)
 
       if (response.success) {
-        items.value = items.value.filter(item => item._id !== id && item.id !== id)
+        items.value = items.value.filter(item => 
+          (item._id || item.id) !== id
+        )
         
-        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
+        if (currentItem.value && ((currentItem.value._id || currentItem.value.id) === id)) {
           currentItem.value = null
         }
       } else {
@@ -175,6 +169,32 @@ export const useCelikStore = defineStore('celik', () => {
       setLoading(false)
     }
   }
+
+  // Fetch single item
+  const fetchItem = async (id: string) => {
+    try {
+      setLoading(true)
+      clearError()
+
+      const response = await celikService.getCelik(id)
+
+      if (response.success) {
+        currentItem.value = convertToStoreItem<CelikItem>(response.data, 'celik')
+        return currentItem.value
+      } else {
+        throw new Error(response.message || 'Çelik malzeme bulunamadı')
+      }
+    } catch (err) {
+      const message = getErrorMessage(err)
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Aliases for compatibility
+  const addItem = createItem
 
   // Reset store
   const reset = () => {
@@ -190,6 +210,12 @@ export const useCelikStore = defineStore('celik', () => {
       hasNextPage: false,
       hasPrevPage: false
     }
+    statistics.value = {
+      totalItems: 0,
+      totalValue: 0,
+      lowStock: 0,
+      recentlyAdded: 0
+    }
   }
 
   return {
@@ -199,6 +225,7 @@ export const useCelikStore = defineStore('celik', () => {
     loading,
     error,
     pagination,
+    statistics,
     
     // Computed
     hasData,
@@ -211,6 +238,7 @@ export const useCelikStore = defineStore('celik', () => {
     createItem,
     updateItem,
     deleteItem,
+    addItem,
     clearError,
     reset
   }

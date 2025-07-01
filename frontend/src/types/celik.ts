@@ -2,63 +2,42 @@
 export interface Celik {
   _id?: string
   id?: string
-  
-  // Temel Bilgiler
+  malzemeTuru?: string
   malzemeCinsi: string
   kalite: string
   tip: string
   aciklama?: string
-  
-  // Boyutlar
   en?: number
   boy?: number
   kalinlik?: number
+  no?: number
+  boruCap?: string
+  etKalınlık?: string
   uzunluk?: number
-  cap?: number
-  agirlik?: number
-  
-  // Stok Bilgileri
-  adet: number
-  kalanMiktar: number
-  birim: string
-  stokKodu?: string
-  
-  // Lokasyon
-  depoYeri?: string
-  rafNo?: string
-  bolum?: string
-  
-  // Proje ve Durum
-  proje: string
-  durumu: string
-  
-  // Fiyat Bilgileri
+  adet?: number
+  stok?: number
+  kalanMiktar?: number
+  girisMiktar?: number
+  cikisMiktar?: number
+  kullanilanMiktar?: number
+  birim?: string
   satinAlisFiyati?: number
+  rafFiyati?: number
+  birimFiyat?: number
+  dovizKur?: number
   paraBirimi?: string
+  parabirimi?: string
   tedarikci?: string
-  
-  // Teknik Özellikler
-  carbonOrani?: number
-  sertlik?: string
-  cetele?: string
-  normStandardi?: string
-  
-  // Tarihler
-  girisYarihi?: string
-  sonKullanimTarihi?: string
+  proje?: string
+  rafNo?: string
+  girisTarihi?: string
+  satinAlisTarihi?: string | Date
   createdAt?: string
   updatedAt?: string
-  
-  // Ek Bilgiler
-  notlar?: string
-  resimUrl?: string
-  sertifika?: string
-  
-  // Rezervasyon
-  rezerveEdilen?: number
-  kullanilanMiktar?: number
+  imDosyaNo?: string
+  izlNo?: string
+  durumu?: 'Aktif' | 'Pasif'
 }
-
 export interface CelikFilter {
   malzemeCinsi?: string
   kalite?: string
@@ -79,6 +58,27 @@ export interface CelikFilter {
   depoYeri?: string
   rafNo?: string
 }
+export interface CelikItem {
+  _id: string
+  malzemeTuru?: string
+  malzemeCinsi: string
+  kalite: string
+  tip: string
+  adet: number
+  kalanMiktar: number
+  birim: string
+  satinAlisFiyati: number
+  rafFiyati?: number
+  aciklama?: string
+  durumu: 'Aktif' | 'Pasif'
+  proje: string
+  stokKodu?: string
+  tedarikci?: string
+  depo?: string
+  createdAt: string
+  updatedAt: string
+}
+
 
 export interface CelikStats {
   totalCount: number
