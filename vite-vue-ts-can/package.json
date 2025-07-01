@@ -1,0 +1,19 @@
+{
+  "name": "vite-vue-ts-can",
+  "displayName": "vite+vue+ts can",
+  "description": "Vite + Vue + TS Can use anywhere.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [ 
+    "leizongmin.node-module-intellisense", 
+    "ms-python.debugpy", 
+    "ms-python.python", 
+    "ms-python.vscode-pylance", 
+    "vue.volar"
+  ]
+}
