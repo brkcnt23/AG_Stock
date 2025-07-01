@@ -1,31 +1,39 @@
 import { BaseApiService } from './baseApiService';
 
-class SarfService extends BaseApiService {
+class SarfService extends BaseApiService<any> {
+  constructor() {
+    super('/sarf');
+  }
   private endpoint = '/sarf';
 
-  getAll() {
-    return this.api.get(this.endpoint);
+  // Standart listeleme (query parametreleri destekler)
+  getSarf(params?: any) {
+    return this.api.get(this.endpoint, { params });
   }
 
-  getById(id: number) {
+  // Tek sarf getir (id string olmalı)
+  getSarfById(id: string) {
     return this.api.get(`${this.endpoint}/${id}`);
   }
 
-  create(data: any) {
+  // Sarf ekle
+  createSarf(data: any) {
     return this.api.post(this.endpoint, data);
   }
 
-  update(id: number, data: any) {
+  // Sarf güncelle
+  updateSarf(id: string, data: any) {
     return this.api.put(`${this.endpoint}/${id}`, data);
   }
 
-  delete(id: number) {
+  // Sarf sil
+  deleteSarf(id: string) {
     return this.api.delete(`${this.endpoint}/${id}`);
   }
 
-  // Stok işlemleri
-  updateStock(id: number, quantity: number) {
-    return this.api.patch(`${this.endpoint}/${id}/stock`, { quantity });
+  // Toplu işlemler (opsiyonel)
+  bulkOperation(data: any) {
+    return this.api.post(`${this.endpoint}/bulk`, data);
   }
 }
 

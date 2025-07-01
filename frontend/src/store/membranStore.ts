@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { membranService } from '../services/membranService'
-import type { Membran, MembranItem } from '../types/membran'
+import type { MembranItem } from '../types/common'
 import { getErrorMessage } from '../utils/errorHelpers'
 
 export const useMembranStore = defineStore('membran', () => {
-  // State - Use MembranItem instead of Membran for better compatibility
+  // State
   const items = ref<MembranItem[]>([])
   const currentItem = ref<MembranItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  
+
   // Pagination
   const pagination = ref({
     page: 1,
@@ -26,7 +26,7 @@ export const useMembranStore = defineStore('membran', () => {
   const isLoading = computed(() => loading.value)
   const hasError = computed(() => error.value !== null)
 
-  // Actions
+  // Methods
   const setLoading = (value: boolean) => {
     loading.value = value
     if (value) error.value = null
@@ -41,31 +41,32 @@ export const useMembranStore = defineStore('membran', () => {
     error.value = null
   }
 
-  // Fetch items
+  // Actions
   const fetchItems = async (params?: any) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await membranService.getMembrans(params)
+      const response = await membranService.getMembran(params)
+      const res = response.data
 
-      if (response.success) {
-        // Convert to MembranItem format with required fields
-        items.value = response.data.map(item => ({
+      if (res.success) {
+        const dataArray = Array.isArray(res.data) ? res.data : [res.data]
+        items.value = dataArray.map((item: Partial<MembranItem>) => ({
           ...item,
-          adet: item.adet || 0,
-          kalanMiktar: item.kalanMiktar || 0,
-          birim: item.birim || 'ADET'
+          _id: item._id || item.id,
+          id: item._id || item.id,
+          malzemeTuru: 'membran' as const
         }))
-        
-        if (response.pagination) {
-          pagination.value = response.pagination
+
+        if (res.pagination) {
+          pagination.value = res.pagination
         }
       } else {
-        throw new Error(response.message || 'Membran verileri getirilemedi')
+        throw new Error(res.message || 'Membran verileri getirilemedi')
       }
     } catch (err) {
-      const message = getErrorMessage(err)  // FIXED: Added import
+      const message = getErrorMessage(err)
       setError(message)
       throw err
     } finally {
@@ -73,28 +74,27 @@ export const useMembranStore = defineStore('membran', () => {
     }
   }
 
-  // Get single item
   const fetchItem = async (id: string) => {
     try {
       setLoading(true)
       clearError()
 
-      const response = await membranService.getMembran(id)
+      const response = await membranService.getMembranById(id)
+      const res = response.data
 
-      if (response.success) {
-        // Convert to MembranItem format
+      if (res.success) {
         currentItem.value = {
-          ...response.data,
-          adet: response.data.adet || 0,
-          kalanMiktar: response.data.kalanMiktar || 0,
-          birim: response.data.birim || 'ADET'
+          ...res.data,
+          _id: res.data._id || res.data.id,
+          id: res.data._id || res.data.id,
+          malzemeTuru: 'membran' as const
         }
         return currentItem.value
       } else {
-        throw new Error(response.message || 'Membran malzeme bulunamadı')
+        throw new Error(res.message || 'Membran bulunamadı')
       }
     } catch (err) {
-      const message = getErrorMessage(err)  // FIXED: Added import
+      const message = getErrorMessage(err)
       setError(message)
       throw err
     } finally {
@@ -102,37 +102,28 @@ export const useMembranStore = defineStore('membran', () => {
     }
   }
 
-  // Create item
-  const createItem = async (itemData: Partial<MembranItem>) => {
+  const createItem = async (data: Partial<MembranItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      // Convert MembranItem to Membran format for API
-      const apiData: Partial<Membran> = {
-        ...itemData,
-        durumu: (itemData.durumu === 'Aktif' || itemData.durumu === 'Pasif') 
-          ? itemData.durumu as 'Aktif' | 'Pasif' 
-          : undefined
-      }
+      const response = await membranService.createMembran(data)
+      const res = response.data
 
-      const response = await membranService.createMembran(apiData)
-
-      if (response.success) {
-        // Convert back to MembranItem and add to items
-        const newItem: MembranItem = {
-          ...response.data,
-          adet: response.data.adet || 0,
-          kalanMiktar: response.data.kalanMiktar || 0,
-          birim: response.data.birim || 'ADET'
+      if (res.success) {
+        const newItem = {
+          ...res.data,
+          _id: res.data._id || res.data.id,
+          id: res.data._id || res.data.id,
+          malzemeTuru: 'membran' as const
         }
         items.value.unshift(newItem)
         return newItem
       } else {
-        throw new Error(response.message || 'Membran malzeme eklenemedi')
+        throw new Error(res.message || 'Membran eklenemedi')
       }
     } catch (err) {
-      const message = getErrorMessage(err)  // FIXED: Added import
+      const message = getErrorMessage(err)
       setError(message)
       throw err
     } finally {
@@ -140,46 +131,37 @@ export const useMembranStore = defineStore('membran', () => {
     }
   }
 
-  // Update item
-  const updateItem = async (id: string, itemData: Partial<MembranItem>) => {
+  const updateItem = async (id: string, data: Partial<MembranItem>) => {
     try {
       setLoading(true)
       clearError()
 
-      // Convert MembranItem to Membran format for API
-      const apiData: Partial<Membran> = {
-        ...itemData,
-        durumu: (itemData.durumu === 'Aktif' || itemData.durumu === 'Pasif') 
-          ? itemData.durumu as 'Aktif' | 'Pasif' 
-          : undefined
-      }
+      const response = await membranService.updateMembran(id, data)
+      const res = response.data
 
-      const response = await membranService.updateMembran(id, apiData)
-
-      if (response.success) {
-        // Convert back to MembranItem
-        const updatedItem: MembranItem = {
-          ...response.data,
-          adet: response.data.adet || 0,
-          kalanMiktar: response.data.kalanMiktar || 0,
-          birim: response.data.birim || 'ADET'
+      if (res.success) {
+        const updatedItem = {
+          ...res.data,
+          _id: res.data._id || res.data.id,
+          id: res.data._id || res.data.id,
+          malzemeTuru: 'membran' as const
         }
 
         const index = items.value.findIndex(item => item._id === id || item.id === id)
         if (index !== -1) {
           items.value[index] = updatedItem
         }
-        
+
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = updatedItem
         }
-        
+
         return updatedItem
       } else {
-        throw new Error(response.message || 'Membran malzeme güncellenemedi')
+        throw new Error(res.message || 'Membran güncellenemedi')
       }
     } catch (err) {
-      const message = getErrorMessage(err)  // FIXED: Added import
+      const message = getErrorMessage(err)
       setError(message)
       throw err
     } finally {
@@ -187,25 +169,24 @@ export const useMembranStore = defineStore('membran', () => {
     }
   }
 
-  // Delete item
   const deleteItem = async (id: string) => {
     try {
       setLoading(true)
       clearError()
 
       const response = await membranService.deleteMembran(id)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         items.value = items.value.filter(item => item._id !== id && item.id !== id)
-        
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = null
         }
       } else {
-        throw new Error(response.message || 'Membran malzeme silinemedi')
+        throw new Error(res.message || 'Membran silinemedi')
       }
     } catch (err) {
-      const message = getErrorMessage(err)  // FIXED: Added import
+      const message = getErrorMessage(err)
       setError(message)
       throw err
     } finally {
@@ -213,30 +194,8 @@ export const useMembranStore = defineStore('membran', () => {
     }
   }
 
-  // Add missing methods for compatibility
+  // Alias for compatibility
   const addItem = createItem
-  const statistics = ref({
-    totalItems: 0,
-    totalValue: 0,
-    lowStock: 0,
-    recentlyAdded: 0
-  })
-
-  // Reset store
-  const reset = () => {
-    items.value = []
-    currentItem.value = null
-    loading.value = false
-    error.value = null
-    pagination.value = {
-      page: 1,
-      limit: 20,
-      totalCount: 0,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPrevPage: false
-    }
-  }
 
   return {
     // State
@@ -245,13 +204,12 @@ export const useMembranStore = defineStore('membran', () => {
     loading,
     error,
     pagination,
-    statistics,
-    
+
     // Computed
     hasData,
     isLoading,
     hasError,
-    
+
     // Actions
     fetchItems,
     fetchItem,
@@ -259,7 +217,6 @@ export const useMembranStore = defineStore('membran', () => {
     updateItem,
     deleteItem,
     addItem,
-    clearError,
-    reset
+    clearError
   }
 })

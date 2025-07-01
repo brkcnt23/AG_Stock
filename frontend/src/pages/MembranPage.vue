@@ -1,60 +1,25 @@
 <!-- pages/MembranPage.vue - TAMAMLANMIŞ HALİ -->
 <template>
   <div class="membran-page">
-    <PageHeader 
-      title="📄 Membran Yönetimi"
-      subtitle="Asma Germe Sistemleri - Membran Malzeme Takibi"
-      item-type="Membran"
-      export-label="Membran Raporu"
-      @add-item="openAddModal"
-      @export="exportStock"
-    />
+    <PageHeader title="📄 Membran Yönetimi" subtitle="Asma Germe Sistemleri - Membran Malzeme Takibi"
+      item-type="Membran" export-label="Membran Raporu" @add-item="openAddModal" @export="exportStock" />
 
-    <StatsGrid 
-      :statistics="store.statistics" 
-      item-type="Membran"
-    />
+    <StatsGrid :statistics="membranStatistics || { totalItems: 0, totalValue: 0, lowStock: 0, recentlyAdded: 0 }"
+      item-type="Membran" />
 
-    <FiltersSection 
-      :filters="filters"
-      :search-text="searchText"
-      :malzeme-cinsi-options="membranCinsiOptions"
-      malzeme-cinsi-label="Membran Cinsi"
-      search-placeholder="Kalite, boyut, proje ara..."
-      @filter-change="onFilterChange"
-      @search-change="onSearchChange"
-      @clear-filters="clearFilters"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-    />
+    <FiltersSection :filters="filters" :search-text="searchText" :malzeme-cinsi-options="membranCinsiOptions"
+      malzeme-cinsi-label="Membran Cinsi" search-placeholder="Kalite, boyut, proje ara..."
+      @filter-change="onFilterChange" @search-change="onSearchChange" @clear-filters="clearFilters"
+      @show-stock-only="showOnlyStock" @show-project-assigned="showProjectAssigned" />
 
-    <BaseDataTable
-      title="📋 Membran Listesi"
-      item-type="membran"
-      :paginated-data="paginatedData"
-      :filtered-count="filteredItems.length"
-      :total-items="filteredItems.length"
-      :current-page="currentPage"
-      :items-per-page="itemsPerPage"
-      :current-density="viewDensity"
-      :loading="store.loading"
-      :error="store.error"
-      :selected-items="selectedItems"
-      @density-change="viewDensity = $event"
-      @items-change="onItemsChange"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-      @clear-filters="clearFilters"
-      @toggle-select-all="toggleSelectAll"
-      @item-select="onItemSelect"
-      @page-change="onPageChange"
-      @row-click="viewItemDetails"
-      @view-item="viewItemDetails"
-      @edit-item="editItem"
-      @duplicate-item="duplicateItem"
-      @delete-item="deleteItem"
-      @retry="fetchData"
-    >
+    <BaseDataTable title="📋 Membran Listesi" item-type="membran" :paginated-data="paginatedData"
+      :filtered-count="filteredItems.length" :total-items="filteredItems.length" :current-page="currentPage"
+      :items-per-page="itemsPerPage" :current-density="viewDensity" :loading="store.loading" :error="store.error"
+      :selected-items="selectedItems" @density-change="viewDensity = $event" @items-change="onItemsChange"
+      @show-stock-only="showOnlyStock" @show-project-assigned="showProjectAssigned" @clear-filters="clearFilters"
+      @toggle-select-all="toggleSelectAll" @item-select="onItemSelect" @page-change="onPageChange"
+      @row-click="viewItemDetails" @view-item="viewItemDetails" @edit-item="editItem" @duplicate-item="duplicateItem"
+      @delete-item="deleteItem" @retry="fetchData">
       <template #table-head>
         <th @click="sortBy('paletNo')" class="sortable">
           Palet No {{ getSortIcon('paletNo') }}
@@ -79,7 +44,7 @@
         <!-- Palet No -->
         <td class="palet-info">
           <div class="palet-main">
-            <strong class="palet-no">{{ item.paletNo || 'P-' + String(Math.random()).substr(2,4) }}</strong>
+            <strong class="palet-no">{{ item.paletNo || 'P-' + String(Math.random()).substr(2, 4) }}</strong>
             <span class="material-type type-membran">
               Membran
             </span>
@@ -191,48 +156,26 @@
     </BaseDataTable>
 
     <!-- Add/Edit Modal -->
-    <BaseModal 
-      v-if="showModal"
-      :title="modalMode === 'add' ? '➕ Yeni Membran Ekle' : '✏️ Membran Düzenle'"
-      size="large"
-      @close="closeModal"
-    >
-      <MaterialForm
-        :mode="modalMode"
-        :item="editingItem"
-        :malzeme-cinsi-options="membranCinsiOptions"
-        @save="saveItem"
-        @cancel="closeModal"
-      >
+    <BaseModal v-if="showModal" :title="modalMode === 'add' ? '➕ Yeni Membran Ekle' : '✏️ Membran Düzenle'" size="large"
+      @close="closeModal">
+      <MaterialForm :mode="modalMode" :item="editingItem" :malzeme-cinsi-options="membranCinsiOptions" @save="saveItem"
+        @cancel="closeModal">
         <template #specificFields>
           <!-- Membrana özel alanlar -->
           <div class="form-row">
             <div class="form-group">
               <label>Palet No</label>
-              <input 
-                v-model="membranForm.paletNo" 
-                type="text" 
-                placeholder="Otomatik oluşturulacak"
-              >
+              <input v-model="membranForm.paletNo" type="text" placeholder="Otomatik oluşturulacak">
             </div>
-            
+
             <div class="form-group">
               <label>Marka *</label>
-              <input 
-                v-model="membranForm.marka" 
-                type="text" 
-                required
-                placeholder="Ferrari, Mehler, Serge..."
-              >
+              <input v-model="membranForm.marka" type="text" required placeholder="Ferrari, Mehler, Serge...">
             </div>
-            
+
             <div class="form-group">
               <label>Model</label>
-              <input 
-                v-model="membranForm.model" 
-                type="text" 
-                placeholder="Model adı"
-              >
+              <input v-model="membranForm.model" type="text" placeholder="Model adı">
             </div>
 
             <div class="form-group">
@@ -254,63 +197,36 @@
           <div class="form-row">
             <div class="form-group">
               <label>Renk Kodu</label>
-              <input 
-                v-model="membranForm.renkKodu" 
-                type="text" 
-                placeholder="RAL 9016, Pantone..."
-              >
+              <input v-model="membranForm.renkKodu" type="text" placeholder="RAL 9016, Pantone...">
             </div>
-            
+
             <div class="form-group">
               <label>Parti No</label>
-              <input 
-                v-model="membranForm.partiNo" 
-                type="text" 
-                placeholder="Üretici parti no"
-              >
+              <input v-model="membranForm.partiNo" type="text" placeholder="Üretici parti no">
             </div>
-            
+
             <div class="form-group">
               <label>Seri No</label>
-              <input 
-                v-model="membranForm.seriNo" 
-                type="text" 
-                placeholder="Seri numarası"
-              >
+              <input v-model="membranForm.seriNo" type="text" placeholder="Seri numarası">
             </div>
 
             <div class="form-group">
               <label>Top Sayısı *</label>
-              <input 
-                v-model="membranForm.topSayisi" 
-                type="number" 
-                required
-                placeholder="5"
-              >
+              <input v-model="membranForm.topSayisi" type="number" required placeholder="5">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Top Uzunluğu (m)</label>
-              <input 
-                v-model="membranForm.topUzunlugu" 
-                type="number" 
-                step="0.1"
-                placeholder="50"
-              >
+              <input v-model="membranForm.topUzunlugu" type="number" step="0.1" placeholder="50">
             </div>
-            
+
             <div class="form-group">
               <label>Alan (m²)</label>
-              <input 
-                v-model="membranForm.alan" 
-                type="number" 
-                step="0.01"
-                placeholder="Otomatik hesaplanır"
-              >
+              <input v-model="membranForm.alan" type="number" step="0.01" placeholder="Otomatik hesaplanır">
             </div>
-            
+
             <div class="form-group checkbox-group">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="membranForm.mesh">
@@ -332,20 +248,12 @@
           <div class="form-row">
             <div class="form-group">
               <label>Sahibi/Sorumlu</label>
-              <input 
-                v-model="membranForm.sahibi" 
-                type="text" 
-                placeholder="Proje sorumlusu"
-              >
+              <input v-model="membranForm.sahibi" type="text" placeholder="Proje sorumlusu">
             </div>
-            
+
             <div class="form-group full-width">
               <label>Not/Açıklama</label>
-              <textarea 
-                v-model="membranForm.note" 
-                rows="2"
-                placeholder="Ek açıklamalar..."
-              ></textarea>
+              <textarea v-model="membranForm.note" rows="2" placeholder="Ek açıklamalar..."></textarea>
             </div>
           </div>
         </template>
@@ -367,8 +275,26 @@ import MaterialForm from '../components/MaterialForm.vue'
 import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
 // Store
 const store = useMembranStore()
+let hasFetched = false
 
-// State
+const membranStatistics = computed(() => {
+  const items = store.items || []
+  const totalItems = items.length
+  const totalValue = items.reduce((sum, i) => sum + (i.satinAlisFiyati || 0), 0)
+  const lowStock = items.filter(i => {
+    const pct = getStockPercentage(i)
+    return pct < 20
+  }).length
+  const oneMonthAgo = new Date()
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+  const recentlyAdded = items.filter(i => {
+    const d = new Date(i.girisTarihi || '')
+    return !isNaN(d.getTime()) && d >= oneMonthAgo
+  }).length
+
+  return { totalItems, totalValue, lowStock, recentlyAdded }
+})
+
 const selectedItems = ref<string[]>([])
 const viewDensity = ref<'compact' | 'normal' | 'detailed'>('normal')
 const itemsPerPage = ref(25)
@@ -409,13 +335,13 @@ const membranCinsiOptions = [
 
 // Computed
 const filteredItems = computed(() => {
-  let items = store.items
+  let items = [...store.items] // KOPYA AL!
 
   // Search filter
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
     items = items.filter((item: any) => {
-    const searchableFields = [
+      const searchableFields = [
         safeAccess(item, 'paletNo', ''),
         safeAccess(item, 'marka', ''),
         safeAccess(item, 'model', ''),
@@ -456,7 +382,7 @@ const filteredItems = computed(() => {
   items.sort((a: any, b: any) => {
     const aVal = a[sortField.value] ?? ''
     const bVal = b[sortField.value] ?? ''
-    
+
     if (sortDirection.value === 'asc') {
       return aVal > bVal ? 1 : -1
     } else {
@@ -598,9 +524,9 @@ const editItem = (item: MembranItem) => {
 
 const duplicateItem = (item: MembranItem) => {
   modalMode.value = 'add'
-  editingItem.value = { 
-    ...item, 
-    _id: undefined, 
+  editingItem.value = {
+    ...item,
+    _id: undefined,
     id: undefined,
     paletNo: undefined, // Yeni palet no oluşturulsun
     createdAt: new Date().toISOString()
@@ -630,7 +556,7 @@ const saveItem = async (itemData: MembranItem) => {
       durum: (membranForm.durum as "Beklemede" | "Kullanımda" | "Tamamlandı" | "İptal" | undefined),
       malzemeTuru: "membran" as const // Set material type with correct literal type
     }
-    
+
     if (modalMode.value === 'add') {
       await store.addItem(finalData)
     } else {
@@ -694,10 +620,6 @@ ${item.dovizKur && item.dovizKur !== 1 ? `• Döviz: ${item.satinAlisFiyati || 
 • Durum: ${item.durum || 'Beklemede'}
 ${item.sahibi ? `• Sahibi: ${item.sahibi}` : ''}
 ${item.note ? `• Not: ${item.note}` : ''}
-
-📅 Tarihler:
-• Kayıt: ${formatDate(item.createdAt)}
-• Yaş: ${getItemAge(typeof item.createdAt === 'string' ? item.createdAt : item.createdAt?.toISOString())}
   `
   alert(details)
 }
@@ -749,9 +671,11 @@ const formatPrice = (price: number, exchangeRate: number = 1) => {
   return `${tlPrice.toLocaleString('tr-TR')} ₺`
 }
 
-const formatDate = (dateStr?: string | Date) => {
+const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'Tarih belirtilmemiş'
-  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+  // Sadece string olarak kullan!
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return 'Tarih belirtilmemiş'
   return date.toLocaleDateString('tr-TR')
 }
 
@@ -761,7 +685,7 @@ const getItemAge = (dateStr?: string) => {
   const now = new Date()
   const diffTime = Math.abs(now.getTime() - date.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 30) return `${diffDays} gün önce`
   if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`
   return `${Math.floor(diffDays / 365)} yıl önce`
@@ -819,9 +743,22 @@ const getColorHex = (colorName: string) => {
   return colorMap[colorName?.toLowerCase()] || '#374151'
 }
 
+// Utility functions (sayfanın altına ekle veya SarfPage'deki gibi kullan)
+const getStockPercentage = (item: any) => {
+  // Membran için stok oranı: topSayisi / (girisMiktar veya toplamUzunluk) gibi bir mantık kurabilirsiniz.
+  // Örnek: topSayisi / toplamUzunluk * 100 (veya ihtiyaca göre)
+  // Burada örnek olarak topSayisi / toplamUzunluk kullanıldı:
+  const kalan = parseFloat(item.topSayisi || '0')
+  const toplam = parseFloat(item.toplamUzunluk || '0')
+  return toplam > 0 ? Math.round((kalan / toplam) * 100) : 0
+}
+
 // Lifecycle
 onMounted(() => {
-  fetchData()
+  if (!hasFetched) {
+    fetchData()
+    hasFetched = true
+  }
 })
 </script>
 
@@ -888,11 +825,30 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-.cins-ptfe { background: #e0f2fe; color: #0369a1; }
-.cins-etfe { background: #dbeafe; color: #1e40af; }
-.cins-pvc { background: #dcfce7; color: #166534; }
-.cins-polyester { background: #fef3c7; color: #92400e; }
-.cins-other { background: #f3f4f6; color: #374151; }
+.cins-ptfe {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.cins-etfe {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cins-pvc {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cins-polyester {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cins-other {
+  background: #f3f4f6;
+  color: #374151;
+}
 
 .mesh-indicator {
   font-size: 10px;
@@ -966,10 +922,21 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.stock-numbers .current.sufficient { color: #10b981; }
-.stock-numbers .current.low { color: #f59e0b; }
-.stock-numbers .current.critical { color: #ef4444; }
-.stock-numbers .current.empty { color: #9ca3af; }
+.stock-numbers .current.sufficient {
+  color: #10b981;
+}
+
+.stock-numbers .current.low {
+  color: #f59e0b;
+}
+
+.stock-numbers .current.critical {
+  color: #ef4444;
+}
+
+.stock-numbers .current.empty {
+  color: #9ca3af;
+}
 
 .unit {
   color: #6b7280;
@@ -986,10 +953,21 @@ onMounted(() => {
   color: #374151;
 }
 
-.stock-status span.sufficient { color: #10b981; }
-.stock-status span.low { color: #f59e0b; }
-.stock-status span.critical { color: #ef4444; }
-.stock-status span.empty { color: #9ca3af; }
+.stock-status span.sufficient {
+  color: #10b981;
+}
+
+.stock-status span.low {
+  color: #f59e0b;
+}
+
+.stock-status span.critical {
+  color: #ef4444;
+}
+
+.stock-status span.empty {
+  color: #9ca3af;
+}
 
 /* Purchase Info Cell */
 .purchase-info-cell {
@@ -1050,10 +1028,25 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
-.status-waiting { background: #fef3c7; color: #92400e; }
-.status-in-use { background: #dcfce7; color: #166534; }
-.status-completed { background: #e9d5ff; color: #6b21a8; }
-.status-cancelled { background: #fef2f2; color: #dc2626; }
+.status-waiting {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-in-use {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-completed {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
+.status-cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+}
 
 .owner-info {
   font-size: 11px;
@@ -1087,7 +1080,7 @@ onMounted(() => {
   .membran-page {
     padding: 10px;
   }
-  
+
   .palet-info,
   .dimensions-cell,
   .stock-cell,

@@ -42,9 +42,9 @@ export class BaseApiService<T> {
 
   // Listeleme: query parametreleri ile sayfalama/filtre desteği
   async getAll(params?: Record<string, any>): Promise<T[]> {
-  const response = await this.api.get<ApiResponse<T[]>>(this.basePath, { params });
-  return response.data.data;         // <-- sadece içteki data dizisini dönüyoruz
-}
+    const { data } = await this.api.get<ApiResponse<T[]>>(this.basePath, { params });
+    return data.data;
+  }
 
   // Tekil kayıt çekme
   async getById(id: string): Promise<ApiResponse<T>> {

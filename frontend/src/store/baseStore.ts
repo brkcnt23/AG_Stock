@@ -55,7 +55,7 @@ export interface CelikItem extends BaseItem {
   malzemeTuru: 'celik'
   no?: number
   boruCap?: string
-  etKalınlık?: string
+  etKalinlik?: string
 }
 
 // Membran Item - malzemeTuru zorunlu
@@ -131,7 +131,7 @@ export interface StoreActions<T> {
 
 export function createBaseStore<T extends BaseItem>(
   storeName: string, 
-  apiService: BaseApiService
+  apiService: BaseApiService<T>
 ): () => StoreState<T> & StoreActions<T> & { 
   hasData: any, 
   isLoading: any, 
@@ -167,13 +167,10 @@ export function createBaseStore<T extends BaseItem>(
     const fetchItems = async (params?: any) => {
       try {
         setLoading(true)
-        const response = await apiService.getItems<T>(params)
-        if (response.success) {
-          items.value = response.data
-          await fetchStatistics()
-        } else {
-          throw new Error(response.message || 'Veri getirme hatası')
-        }
+        // DÜZELTME: getItems -> getAll
+        const data = await apiService.getAll(params)
+        items.value = data
+        await fetchStatistics()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Bilinmeyen hata'
         error.value = message
@@ -184,11 +181,13 @@ export function createBaseStore<T extends BaseItem>(
     }
 
     const fetchStatistics = async () => {
+      // İstatistik endpoint'iniz yoksa bu fonksiyonu boş bırakabilirsiniz
+      // veya apiService'e uygun şekilde ekleyin.
       try {
-        const response = await apiService.getStats<Statistics>()
-        if (response.success) {
-          Object.assign(statistics.value, response.data)
-        }
+        // const response = await apiService.getStats<Statistics>()
+        // if (response.success) {
+        //   Object.assign(statistics.value, response.data)
+        // }
       } catch (err) {
         console.warn(`⚠️ ${storeName} istatistikleri alınamadı:`, err)
       }
@@ -197,13 +196,10 @@ export function createBaseStore<T extends BaseItem>(
     const addItem = async (itemData: Partial<T>) => {
       try {
         setLoading(true)
-        const response = await apiService.createItem<T>(itemData)
-        if (response.success) {
-          items.value.unshift(response.data)
-          await fetchStatistics()
-        } else {
-          throw new Error(response.message || 'Ekleme hatası')
-        }
+        // DÜZELTME: createItem -> create
+        const response = await apiService.create(itemData)
+        items.value.unshift(response.data)
+        await fetchStatistics()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Ekleme hatası'
         error.value = message
@@ -216,16 +212,13 @@ export function createBaseStore<T extends BaseItem>(
     const updateItem = async (id: string, itemData: Partial<T>) => {
       try {
         setLoading(true)
-        const response = await apiService.updateItem<T>(id, itemData)
-        if (response.success) {
-          const index = items.value.findIndex(item => (item._id || item.id) === id)
-          if (index !== -1) {
-            items.value.splice(index, 1, response.data)
-          }
-          await fetchStatistics()
-        } else {
-          throw new Error(response.message || 'Güncelleme hatası')
+        // DÜZELTME: updateItem -> update
+        const response = await apiService.update(id, itemData)
+        const index = items.value.findIndex(item => (item._id || item.id) === id)
+        if (index !== -1) {
+          items.value.splice(index, 1, response.data)
         }
+        await fetchStatistics()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Güncelleme hatası'
         error.value = message
@@ -238,16 +231,13 @@ export function createBaseStore<T extends BaseItem>(
     const deleteItem = async (id: string) => {
       try {
         setLoading(true)
-        const response = await apiService.deleteItem<T>(id)
-        if (response.success) {
-          const index = items.value.findIndex(item => (item._id || item.id) === id)
-          if (index !== -1) {
-            items.value.splice(index, 1)
-          }
-          await fetchStatistics()
-        } else {
-          throw new Error(response.message || 'Silme hatası')
+        // DÜZELTME: deleteItem -> delete
+        await apiService.delete(id)
+        const index = items.value.findIndex(item => (item._id || item.id) === id)
+        if (index !== -1) {
+          items.value.splice(index, 1)
         }
+        await fetchStatistics()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Silme hatası'
         error.value = message
@@ -262,8 +252,9 @@ export function createBaseStore<T extends BaseItem>(
         const existingItem = items.value.find(item => (item._id || item.id) === id)
         if (existingItem) return existingItem
 
-        const response = await apiService.getItem<T>(id)
-        return response.success ? response.data : null
+        // DÜZELTME: getItem -> getById
+        const response = await apiService.getById(id)
+        return response.data
       } catch (err) {
         console.error(`❌ ${storeName} getirme hatası:`, err)
         return null

@@ -275,7 +275,9 @@ import MaterialForm from '../components/MaterialForm.vue'
 import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
 // Store
 const store = useSarfStore()
-const hasFetched = ref(false)
+// let hasFetched = ref(false) // BUNU KALDIR
+let hasFetched = false // REAKTİF OLMAYAN DEĞİŞKEN KULLAN
+
 // Statistics
 const sarfStatistics = computed(() => {
   const items = store.items
@@ -340,7 +342,8 @@ const filters = reactive({
 
 // Computed
 const filteredItems = computed(() => {
-  let items = store.items
+  // DİKKAT: items'ı kopyala, doğrudan sort etme!
+  let items = [...store.items]
 
   // Search filter
   if (searchText.value) {
@@ -730,9 +733,9 @@ const getMalzemeCinsiClass = (cins: string) => {
 
 // Lifecycle
 onMounted(() => {
-  if (!hasFetched.value) {
+  if (!hasFetched) {
     fetchData()
-    hasFetched.value = true
+    hasFetched = true
   }
 })
 </script>

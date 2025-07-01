@@ -10,8 +10,10 @@
       @export="exportStock"
     />
 
+    <!-- SADECE store.statistics KULLAN -->
     <StatsGrid 
-      :statistics="store.statistics" 
+      v-if="!store.loading"
+      :statistics="store.statistics"
       item-type="Çelik Malzeme"
     />
 
@@ -222,7 +224,7 @@
             <div class="form-group">
               <label>Et Kalınlığı</label>
               <input 
-                v-model="celikForm.etKalınlık" 
+                v-model="celikForm.etKalinlik"
                 type="text" 
                 placeholder="4mm, 6mm..."
               >
@@ -276,7 +278,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useCelikStore } from '../store/celikStore'
-import type { CelikItem } from '../types/common'
+import type { CelikItem, CelikFormData } from '../types/celik'  // celik.ts'den import et
 import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import FiltersSection from '../components/FiltersSection.vue'
@@ -299,15 +301,23 @@ const showModal = ref(false)
 const modalMode = ref<'add' | 'edit'>('add')
 const editingItem = ref<CelikItem | null>(null)
 
-// Çelik özel form alanları
-const celikForm = reactive({
-  no: undefined as number | undefined,
+// Çelik özel form alanları - düzeltilmiş versiyon
+const celikForm = reactive<Partial<CelikItem>>({
+  malzemeTuru: 'celik',
+  malzemeCinsi: '',
+  kalite: '',
+  tip: undefined,
+  no: undefined,
   boruCap: '',
-  etKalınlık: '',
-  tip: undefined as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined,
-  adet: undefined as number | undefined,
-  uzunluk: undefined as number | undefined,
-  aciklama: ''
+  etKalinlik: '',
+  uzunluk: undefined,
+  adet: undefined,
+  kalanMiktar: 0,
+  birim: 'ADET',
+  satinAlisFiyati: 0,
+  paraBirimi: 'TL',
+  durumu: 'Aktif',
+  proje: 'Stok'
 })
 
 // Çelik cinsi seçenekleri
@@ -476,7 +486,7 @@ const openAddModal = () => {
   Object.assign(celikForm, {
     no: undefined,
     boruCap: '',
-    etKalınlık: '',
+    etKalinlik: '',
     tip: '',
     adet: undefined,
     uzunluk: undefined,
@@ -488,15 +498,21 @@ const openAddModal = () => {
 const editItem = (item: CelikItem) => {
   modalMode.value = 'edit'
   editingItem.value = item
-  // Fill çelik form with item data
   Object.assign(celikForm, {
     no: item.no,
     boruCap: item.boruCap || '',
-    etKalınlık: item.etKalınlık || '',
-    tip: (item.tip as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined) || undefined,
+    etKalinlik: item.etKalinlik || '',
+    tip: item.tip,
     adet: item.adet,
     uzunluk: item.uzunluk,
-    aciklama: item.aciklama || ''
+    aciklama: item.aciklama || '',
+    malzemeCinsi: item.malzemeCinsi,
+    kalite: item.kalite,
+    kalanMiktar: item.kalanMiktar,
+    birim: item.birim,
+    satinAlisFiyati: item.satinAlisFiyati,
+    paraBirimi: item.paraBirimi,
+    durumu: item.durumu
   })
   showModal.value = true
 }
@@ -505,8 +521,8 @@ const duplicateItem = (item: CelikItem) => {
   modalMode.value = 'add'
   editingItem.value = { 
     ...item, 
-    _id: undefined, 
-    id: undefined,
+    _id: '', 
+    id: '',
     girisTarihi: new Date().toISOString().split('T')[0] 
   }
   showModal.value = true
@@ -517,20 +533,21 @@ const closeModal = () => {
   editingItem.value = null
 }
 
-const saveItem = async (itemData: CelikItem) => {
+const saveItem = async (itemData: Partial<CelikItem>) => {
   try {
-    // Add çelik-specific fields
-    const finalData = {
+    const finalData: Partial<CelikItem> = {
       ...itemData,
       ...celikForm,
-      tip: celikForm.tip as 'siyah' | 'paslanmaz' | 'aluminyum' | undefined,
-      malzemeTuru: 'celik' as const
+      malzemeTuru: 'celik',
+      tip: celikForm.tip as 'siyah' | 'paslanmaz' | 'aluminyum',
+      durumu: celikForm.durumu as 'Aktif' | 'Pasif',
+      paraBirimi: celikForm.paraBirimi as 'TL' | 'USD' | 'EUR'
     }
     
     if (modalMode.value === 'add') {
       await store.addItem(finalData)
     } else {
-      await store.updateItem(itemData._id || itemData.id || '', finalData)
+      await store.updateItem(itemData._id!, finalData)
     }
     closeModal()
   } catch (error) {
@@ -563,7 +580,7 @@ const viewItemDetails = (item: CelikItem) => {
 
 📏 Boyutlar:
 • Boru Çapı: ${item.boruCap || 'Belirtilmemiş'}
-• Et Kalınlığı: ${item.etKalınlık || 'Belirtilmemiş'}
+• Et Kalınlığı: ${item.etKalinlik || 'Belirtilmemiş'}
 • Uzunluk: ${item.uzunluk ? item.uzunluk + 'mm' : 'Belirtilmemiş'}
 • Adet: ${item.adet || 0}
 
@@ -584,10 +601,6 @@ ${item.dovizKur && item.dovizKur !== 1 ? `• Döviz: ${item.satinAlisFiyati || 
 ${item.imDosyaNo ? `• İM Dosya: ${item.imDosyaNo}` : ''}
 ${item.izlNo ? `• İzleme: ${item.izlNo}` : ''}
 
-📅 Tarihler:
-• Giriş: ${formatDate(item.girisTarihi)}
-• Satın Alma: ${formatDate(typeof item.satinAlisTarihi === 'string' ? item.satinAlisTarihi : item.satinAlisTarihi?.toISOString?.())}
-
 📝 Açıklama:
 ${item.aciklama || 'Açıklama belirtilmemiş'}
   `
@@ -602,7 +615,7 @@ const exportStock = () => {
       item.kalite,
       getCelikTipiLabel(item.tip ?? ''),
       item.boruCap || '',
-      item.etKalınlık || '',
+      item.etKalinlik || '',
       item.uzunluk || '',
       item.adet || '',
       item.kalanMiktar || item.adet || '',
@@ -626,10 +639,10 @@ const exportStock = () => {
 }
 
 // Utility functions
-const formatMainDimensions = (item: any) => {
+const formatMainDimensions = (item: CelikItem) => {
   const parts: string[] = []
   if (item.boruCap) parts.push(item.boruCap)
-  if (item.etKalınlık) parts.push(`et: ${item.etKalınlık}`)
+  if (item.etKalinlik) parts.push(`et: ${item.etKalinlik}`)
   return parts.length > 0 ? parts.join(' • ') : 'Boyut belirtilmemiş'
 }
 

@@ -12,7 +12,7 @@ export interface Celik {
   kalinlik?: number
   no?: number
   boruCap?: string
-  etKalınlık?: string
+  etKalinlik?: string
   uzunluk?: number
   adet?: number
   stok?: number
@@ -60,82 +60,65 @@ export interface CelikFilter {
 }
 export interface CelikItem {
   _id: string
-  malzemeTuru?: string
+  id?: string
+  malzemeTuru: 'celik'
   malzemeCinsi: string
   kalite: string
-  tip: string
+  tip: 'siyah' | 'paslanmaz' | 'aluminyum'
+  no?: number
+  boruCap?: string
+  etKalinlik?: string
+  uzunluk?: number
   adet: number
   kalanMiktar: number
+  girisMiktar?: number
+  cikisMiktar?: number
   birim: string
   satinAlisFiyati: number
   rafFiyati?: number
-  aciklama?: string
-  durumu: 'Aktif' | 'Pasif'
-  proje: string
-  stokKodu?: string
+  dovizKur?: number
+  paraBirimi?: 'TL' | 'USD' | 'EUR'
   tedarikci?: string
-  depo?: string
+  proje?: string
+  rafNo?: string
+  girisTarihi?: string
+  satinAlisTarihi?: string
+  durumu: 'Aktif' | 'Pasif'
+  aciklama?: string
+  imDosyaNo?: string
+  izlNo?: string
   createdAt: string
   updatedAt: string
 }
 
 
 export interface CelikStats {
-  totalCount: number
+  totalItems: number
   totalValue: number
-  activeCount: number
-  passiveCount: number
-  lowStockCount: number
-  outOfStockCount: number
-  averagePrice: number
-  topSuppliers: Array<{
-    name: string
-    count: number
-    totalValue: number
-  }>
-  stockByProject: Array<{
-    project: string
-    count: number
-    totalValue: number
-  }>
-  stockByQuality: Array<{
-    kalite: string
-    count: number
-    percentage: number
-  }>
-  recentMovements: number
-  lastUpdate: string
+  lowStock: number
+  recentlyAdded: number
+  activeCount?: number
+  passiveCount?: number
+  lastUpdate?: string
 }
 
 export interface CelikFormData {
+  malzemeTuru: 'celik'
   malzemeCinsi: string
   kalite: string
-  tip: string
-  aciklama?: string
-  en?: number
-  boy?: number
-  kalinlik?: number
+  tip: 'siyah' | 'paslanmaz' | 'aluminyum'
+  no?: number
+  boruCap?: string
+  etKalinlik?: string
   uzunluk?: number
-  cap?: number
-  agirlik?: number
   adet: number
+  kalanMiktar: number
   birim: string
-  stokKodu?: string
-  depoYeri?: string
-  rafNo?: string
-  bolum?: string
-  proje: string
-  durumu: string
-  satinAlisFiyati?: number
-  paraBirimi?: string
-  tedarikci?: string
-  carbonOrani?: number
-  sertlik?: string
-  cetele?: string
-  normStandardi?: string
-  notlar?: string
-  resimUrl?: string
-  sertifika?: string
+  satinAlisFiyati: number
+  paraBirimi?: 'TL' | 'USD' | 'EUR'
+  durumu: 'Aktif' | 'Pasif'
+  proje?: string
+  aciklama?: string
 }
 
 export const CELIK_KALITE_OPTIONS = [

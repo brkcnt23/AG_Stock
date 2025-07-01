@@ -388,12 +388,12 @@ const filteredItems = computed(() => {
   // Search filter
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    items = items.filter((item: FitilItem) => 
+    items = items.filter(item => 
       item.malzeme?.toLowerCase().includes(search) ||
       item.cins?.toLowerCase().includes(search) ||
       item.kalite?.toLowerCase().includes(search) ||
       item.renk?.toLowerCase().includes(search) ||
-      item.marka?.toLowerCase().includes(search) ||
+      item.tedarikci?.toLowerCase().includes(search) ||
       item.proje?.toLowerCase().includes(search) ||
       item.tedarikci?.toLowerCase().includes(search)
     )
@@ -1102,3 +1102,4 @@ onMounted(() => {
     grid-column: span 1;
   }
 }
+</style>

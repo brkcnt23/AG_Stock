@@ -54,11 +54,29 @@ export const useHalatStore = defineStore('halat', () => {
       clearError()
 
       const response = await halatService.getHalats(params)
-
+      
       if (response.success) {
-        items.value = response.data
-        syncArrays()
+        const rawItems = response.data || [];
+        items.value = rawItems.map((item: any) => ({
+          _id: item._id,
+          name: item.proje || '',
+          kalite: item.tip || '',
+          cins: 'celik', // Default to celik if not specified
+          cap: Number(item.cap?.replace('Ø', '')) || 0,
+          uzunluk: Number(item.uzunluk) || 0,
+          stok: Number(item.kalanMiktar || item.adet || 0),
+          birim: item.birim || 'ADET',
+          birimFiyat: Number(item.satinAlisFiyati) || 0,
+          paraBirimi: item.paraBirimi || 'TL',
+          tedarikci: item.tedarikci || '',
+          raf: item.rafNo || '',
+          aciklama: item.aciklama || '',
+          createdAt: item.girisTarihi || item.createdAt,
+          updatedAt: item.updatedAt
+        }));
         
+        syncArrays()
+
         if (response.pagination) {
           pagination.value = response.pagination
         }
@@ -106,6 +124,8 @@ export const useHalatStore = defineStore('halat', () => {
       const response = await halatService.createHalat(itemData)
 
       if (response.success) {
+        // Defensive: ensure items.value is always an array
+        if (!Array.isArray(items.value)) items.value = []
         items.value.unshift(response.data)
         syncArrays()
         return response.data
@@ -130,12 +150,14 @@ export const useHalatStore = defineStore('halat', () => {
       const response = await halatService.updateHalat(id, itemData)
 
       if (response.success) {
-        const index = items.value.findIndex(item => item._id === id || item.id === id)
+        // Defensive: ensure items.value is always an array
+        if (!Array.isArray(items.value)) items.value = []
+        const index = items.value.findIndex(item => item._id === id || item._id === id)
         if (index !== -1) {
           items.value[index] = response.data
         }
         
-        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
+        if (currentItem.value && (currentItem.value._id === id || currentItem.value._id === id)) {
           currentItem.value = response.data
         }
         
@@ -162,9 +184,11 @@ export const useHalatStore = defineStore('halat', () => {
       const response = await halatService.deleteHalat(id)
 
       if (response.success) {
-        items.value = items.value.filter(item => item._id !== id && item.id !== id)
+        // Defensive: ensure items.value is always an array
+        if (!Array.isArray(items.value)) items.value = []
+        items.value = items.value.filter(item => item._id !== id && item._id !== id)
         
-        if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
+        if (currentItem.value && (currentItem.value._id === id || currentItem.value._id === id)) {
           currentItem.value = null
         }
         

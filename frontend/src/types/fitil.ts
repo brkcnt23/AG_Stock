@@ -1,7 +1,8 @@
+import { BaseItem } from "./common"
+
 // frontend/src/types/fitil.ts
 export interface Fitil {
   _id?: string
-  id?: string
   
   // Temel Bilgiler
   malzeme: string
@@ -110,7 +111,18 @@ export interface FitilStats {
 }
 
 // frontend/src/types/fitil.ts
-export interface FitilItem {
+export interface FitilItem extends BaseItem {
+  malzemeTuru: 'fitil'
+  marka?: string
+  antistatik?: boolean
+  uvDayanikli?: boolean
+  elastikiyet?: string | number
+  dayanim?: number
+  kalinlik?: number
+  dovizKur?: number
+  kullanimAlani?: string
+  lotNo?: string
+  uretimTarihi?: string
   _id: string
   malzeme: string
   cins: string

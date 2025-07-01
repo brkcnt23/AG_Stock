@@ -26,7 +26,6 @@ export interface BaseItem {
   satinAlisFiyati?: number
   rafFiyati?: number
   birimFiyat?: number
-  dovizKur?: number
   paraBirimi?: string
   parabirimi?: string
   tedarikci?: string
@@ -41,7 +40,7 @@ export interface BaseItem {
   // Çelik-specific fields
   no?: number
   boruCap?: string
-  etKalınlık?: string
+  etKalinlik?: string
   // Fitil-specific fields
   marka?: string
   renk?: string
@@ -50,22 +49,10 @@ export interface BaseItem {
   elastikiyet?: string | number
   lotNo?: string
   uretimTarihi?: string
-  // Membran-specific fields
-  paletNo?: string
-  model?: string
-  topSayisi?: number
-  durumu?: 'Aktif' | 'Pasif' | 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
-  durum?: 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
-  sahibi?: string
-  note?: string
-  mesh?: boolean
-  // Halat-specific fields
-  yapisi?: string
-  gramaj?: number
-  sertifikaNo?: string
-  testRaporu?: string
-  paslanmaz?: boolean
+  antistatik?: boolean
+  uvDayanikli?: boolean
   kullanimAlani?: string
+  dovizKur?: number
 }
 
 // Sarf Item
@@ -87,6 +74,26 @@ export interface CelikItem extends BaseItem {
 // Membran Item  
 export interface MembranItem extends BaseItem {
   malzemeTuru: 'membran'
+  paletNo?: string
+  marka?: string
+  model?: string
+  renk?: string
+  renkKodu?: string
+  partiNo?: string
+  seriNo?: string
+  topSayisi?: number
+  topUzunlugu?: number
+  toplamUzunluk?: number
+  alan?: number
+  mesh?: boolean
+  durumu?: 'Aktif' | 'Pasif' | 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
+  durum?: 'Beklemede' | 'Kullanımda' | 'Tamamlandı' | 'İptal'
+  sahibi?: string
+  note?: string
+  girisTarihi?: string
+  satinAlisTarihi?: string // Sadece string olarak kullan
+  createdAt?: string
+  updatedAt?: string
 }
 
 // Halat Item
@@ -106,6 +113,18 @@ export interface HalatItem extends BaseItem {
 // Fitil Item
 export interface FitilItem extends BaseItem {
   malzemeTuru: 'fitil'
+  marka?: string
+  renk?: string
+  renkKodu?: string
+  dayanim?: number
+  kalinlik?: number
+  elastikiyet?: string | number
+  lotNo?: string
+  uretimTarihi?: string
+  antistatik?: boolean
+  uvDayanikli?: boolean
+  kullanimAlani?: string
+  dovizKur?: number
 }
 
 // Project Material - EKSİK ALANLAR EKLENDİ

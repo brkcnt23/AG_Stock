@@ -1,115 +1,75 @@
-<!-- pages/HalatPage.vue - FIXED TO MATCH PROJECT STRUCTURE -->
 <template>
   <div class="halat-page">
-    <PageHeader 
-      title="⛓️ Halat Yönetimi"
-      subtitle="Asma Germe Sistemleri - Halat Malzeme Takibi"
-      item-type="Halat"
-      export-label="Halat Raporu"
-      @add-item="openAddModal"
-      @export="exportStock"
-    />
+    <PageHeader title="Halat Stokları" subtitle="Çelik, sentetik ve karma halat stoklarınızı yönetin" itemType="Halat"
+      exportLabel="Stokları Dışa Aktar" @add-item="openAddModal" @export="exportStock" />
 
-    <StatsGrid 
-      :statistics="store.statistics" 
-      item-type="Halat"
-    />
+    <StatsGrid :statistics="halatStatistics" itemType="Halat" />
 
-    <FiltersSection 
-      :filters="filters"
-      :search-text="searchText"
-      :malzeme-cinsi-options="halatCinsiOptions"
-      malzeme-cinsi-label="Halat Cinsi"
-      search-placeholder="Kalite, çap, tip ara..."
-      @filter-change="onFilterChange"
-      @search-change="onSearchChange"
-      @clear-filters="clearFilters"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-    />
+    <FiltersSection :filters="filters" :searchText="searchText" :malzemeCinsiOptions="halatCinsiOptions"
+      malzemeCinsiLabel="Halat Cinsi" searchPlaceholder="Kalite, tedarikçi, çap ara..." @filter-change="onFilterChange"
+      @search-change="onSearchChange" @clear-filters="clearFilters" @show-stock-only="showOnlyStock"
+      @show-project-assigned="showProjectAssigned" />
 
-    <BaseDataTable
-      title="📋 Halat Listesi"
-      item-type="halat"
-      :paginated-data="paginatedData"
-      :filtered-count="filteredItems.length"
-      :total-items="filteredItems.length"
-      :current-page="currentPage"
-      :items-per-page="itemsPerPage"
-      :current-density="viewDensity"
-      :loading="store.loading"
-      :error="store.error"
-      :selected-items="selectedItems"
-      @density-change="viewDensity = $event"
-      @items-change="onItemsChange"
-      @show-stock-only="showOnlyStock"
-      @show-project-assigned="showProjectAssigned"
-      @clear-filters="clearFilters"
-      @toggle-select-all="toggleSelectAll"
-      @item-select="onItemSelect"
-      @page-change="onPageChange"
-      @row-click="viewItemDetails"
-      @view-item="viewItemDetails"
-      @edit-item="editItem"
-      @duplicate-item="duplicateItem"
-      @delete-item="deleteItem"
-      @retry="fetchData"
-    >
+    <BaseDataTable title="⛓️ Halat Listesi" item-type="halat" :paginated-data="paginatedData"
+      :filtered-count="filteredItems.length" :total-items="store.items.length" :current-page="currentPage"
+      :items-per-page="itemsPerPage" :current-density="viewDensity" :loading="store.isLoading" :error="store.error"
+      :selected-items="selectedItems" @density-change="viewDensity = $event" @items-change="onItemsChange"
+      @show-stock-only="showOnlyStock" @show-project-assigned="showProjectAssigned" @clear-filters="clearFilters"
+      @toggle-select-all="toggleSelectAll" @item-select="onItemSelect" @page-change="onPageChange"
+      @row-click="viewItemDetails" @view-item="viewItemDetails" @edit-item="editItem" @duplicate-item="duplicateItem"
+      @delete-item="deleteItem" @retry="fetchData">
       <template #table-head>
-        <th @click="sortBy('malzemeTuru')" class="sortable">
-          Malzeme Türü {{ getSortIcon('malzemeTuru') }}
+        <th @click="sortBy('name')" class="sortable">
+          Proje {{ getSortIcon('name') }}
+        </th>
+        <th @click="sortBy('kalite')" class="sortable">
+          Kalite {{ getSortIcon('kalite') }}
         </th>
         <th @click="sortBy('cins')" class="sortable">
           Halat Cinsi {{ getSortIcon('cins') }}
         </th>
-        <th>Çap & Özellikler</th>
-        <th @click="sortBy('kalanMiktar')" class="sortable">
-          Stok Durumu {{ getSortIcon('kalanMiktar') }}
+        <th>Boyutlar & Özellikler</th>
+        <th @click="sortBy('stok')" class="sortable">
+          Stok Durumu {{ getSortIcon('stok') }}
         </th>
         <th>Alış Bilgileri</th>
-        <th @click="sortBy('proje')" class="sortable">
-          Proje/Lokasyon {{ getSortIcon('proje') }}
-        </th>
-        <th @click="sortBy('girisTarihi')" class="sortable">
-          Giriş Tarihi {{ getSortIcon('girisTarihi') }}
+        <th @click="sortBy('createdAt')" class="sortable">
+          Kayıt Tarihi {{ getSortIcon('createdAt') }}
         </th>
       </template>
 
       <template #table-body="{ item }">
-        <!-- Malzeme Türü -->
-        <td class="material-info">
-          <div class="material-main">
-            <strong class="quality">{{ item.kalite || 'Belirtilmemiş' }}</strong>
+        <!-- Proje -->
+        <td class="project-info">
+          <div class="project-main">
+            <strong class="project-name">{{ item.name || 'Stok' }}</strong>
             <span class="material-type type-halat">
               Halat
             </span>
           </div>
-          <div class="material-details" v-if="viewDensity !== 'compact'">
-            <span class="material-name">{{ item.malzemeTuru || '-' }}</span>
-          </div>
+        </td>
+
+        <!-- Kalite -->
+        <td class="quality-cell">
+          <span class="quality-badge">
+            {{ item.kalite || '-' }}
+          </span>
         </td>
 
         <!-- Halat Cinsi -->
         <td class="type-cell">
-          <span :class="getHalatCinsiClass(item.cins)" class="type-badge">
-            {{ item.cins || '-' }}
+          <span :class="['type-badge', `cins-${item.cins}`]">
+            {{ getCinsiLabel(item.cins) }}
           </span>
-          <div v-if="viewDensity === 'detailed'" class="construction-info">
-            <small>{{ item.yapisi || 'Yapı belirtilmemiş' }}</small>
-          </div>
         </td>
 
-        <!-- Çap & Özellikler -->
+        <!-- Boyutlar & Özellikler -->
         <td class="dimensions-cell">
           <div class="dimensions-info">
-            <div class="main-size">{{ formatHalatDimensions(item) }}</div>
-            <div class="sub-info" v-if="viewDensity !== 'compact'">
-              <div class="strength-info">
-                <span>Dayanım: {{ item.dayanim || '-' }} kg</span>
-              </div>
-              <div v-if="viewDensity === 'detailed'" class="extra-info">
-                <small v-if="item.uzunluk">{{ item.uzunluk }}m bobin</small>
-                <small v-if="item.gramaj">{{ item.gramaj }}g/m</small>
+            <div class="main-size">Ø {{ item.cap ?? '-' }} mm</div>
+            <div v-if="viewDensity !== 'compact'" class="sub-info">
+              <div v-if="item.uzunluk" class="length-info">
+                {{ item.uzunluk }}m uzunluk
               </div>
             </div>
           </div>
@@ -120,22 +80,14 @@
           <div class="stock-display">
             <div class="stock-numbers">
               <span class="current" :class="getStockStatusClass(item)">
-                {{ item.kalanMiktar || '0' }}
+                {{ item.stok || '0' }}
               </span>
-              <span class="separator">/</span>
-              <span class="total">{{ item.girisMiktar || '0' }}</span>
+              <span class="unit">{{ item.birim }}</span>
             </div>
-            <div class="stock-bar">
-              <div class="stock-progress" 
-                   :style="{ width: getStockPercentage(item) + '%' }"
-                   :class="getStockStatusClass(item)">
+            <div v-if="viewDensity !== 'compact'" class="stock-details">
+              <div v-if="item.minStokSeviyesi" class="min-stock">
+                Min: {{ item.minStokSeviyesi }}
               </div>
-            </div>
-            <div class="stock-label">
-              <span :class="getStockStatusClass(item)">
-                {{ getStockStatusLabel(item) }}
-              </span>
-              <span class="percentage">({{ getStockPercentage(item) }}%)</span>
             </div>
           </div>
         </td>
@@ -145,157 +97,31 @@
           <div class="purchase-details">
             <div class="price-main">
               <span class="price-amount">
-                {{ formatPrice(item.satinAlisFiyati, item.dovizKur) }}
+                {{ formatPrice(item.birimFiyat, item.paraBirimi) }}
               </span>
             </div>
-            <div class="price-details" v-if="viewDensity !== 'compact'">
-              <div v-if="item.dovizKur && item.dovizKur !== 1" class="exchange-info">
-                <small>{{ item.satinAlisFiyati }}{{ item.paraBirimi || '$' }} × {{ item.dovizKur }}</small>
-              </div>
-              <div class="supplier-info">
-                <small>{{ item.tedarikci || 'Tedarikçi belirtilmemiş' }}</small>
-              </div>
+            <div v-if="viewDensity !== 'compact'" class="supplier-info">
+              <small>{{ item.tedarikci || '-' }}</small>
             </div>
           </div>
         </td>
 
-        <!-- Proje/Lokasyon -->
-        <td class="location-cell">
-          <div class="location-info">
-            <div class="project-name">{{ item.proje || 'Stok' }}</div>
-            <div class="shelf-location">
-              <span class="shelf-badge">{{ item.rafNo || 'Belirsiz' }}</span>
-            </div>
-            <div class="document-refs" v-if="viewDensity === 'detailed'">
-              <small v-if="item.sertifikaNo">Sert: {{ item.sertifikaNo }}</small>
-              <small v-if="item.testRaporu">Test: {{ item.testRaporu }}</small>
-            </div>
-          </div>
-        </td>
-
-        <!-- Giriş Tarihi -->
+        <!-- Kayıt Tarihi -->
         <td class="date-cell">
           <div class="date-info">
-            <div class="entry-date">{{ formatDate(item.girisTarihi) }}</div>
-            <div class="age-info" v-if="viewDensity !== 'compact'">
-              <small>{{ getItemAge(item.girisTarihi) }}</small>
+            <div class="entry-date">{{ formatDate(item.createdAt) }}</div>
+            <div v-if="viewDensity !== 'compact'" class="age-info">
+              <small>{{ getItemAge(item.createdAt) }}</small>
             </div>
           </div>
         </td>
       </template>
     </BaseDataTable>
 
-    <!-- Add/Edit Modal -->
-    <BaseModal 
-      v-if="showModal"
-      :title="modalMode === 'add' ? '➕ Yeni Halat Ekle' : '✏️ Halat Düzenle'"
-      size="large"
-      @close="closeModal"
-    >
-      <MaterialForm
-        :mode="modalMode"
-        :item="editingItem"
-        :malzeme-cinsi-options="halatCinsiOptions"
-        @save="saveItem"
-        @cancel="closeModal"
-      >
-        <template #specificFields>
-          <!-- Halata özel alanlar -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>Halat Çapı (mm) *</label>
-              <input 
-                v-model="halatForm.cap" 
-                type="number" 
-                step="0.1"
-                required
-                placeholder="6, 8, 10, 12..."
-              >
-            </div>
-            
-            <div class="form-group">
-              <label>Yapısı</label>
-              <select v-model="halatForm.yapisi">
-                <option value="">Seçiniz</option>
-                <option value="1x7">1x7 (7 tel)</option>
-                <option value="1x19">1x19 (19 tel)</option>
-                <option value="7x7">7x7 (49 tel)</option>
-                <option value="7x19">7x19 (133 tel)</option>
-                <option value="6x7">6x7 (42 tel)</option>
-                <option value="6x19">6x19 (114 tel)</option>
-                <option value="özel">Özel Yapı</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label>Dayanım (kg)</label>
-              <input 
-                v-model="halatForm.dayanim" 
-                type="number" 
-                placeholder="Kopma dayanımı"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Uzunluk (m)</label>
-              <input 
-                v-model="halatForm.uzunluk" 
-                type="number" 
-                step="0.1"
-                placeholder="Bobin uzunluğu"
-              >
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Gramaj (g/m)</label>
-              <input 
-                v-model="halatForm.gramaj" 
-                type="number" 
-                step="0.01"
-                placeholder="Metre başına ağırlık"
-              >
-            </div>
-            
-            <div class="form-group">
-              <label>Sertifika No</label>
-              <input 
-                v-model="halatForm.sertifikaNo" 
-                type="text" 
-                placeholder="Kalite sertifikası"
-              >
-            </div>
-            
-            <div class="form-group">
-              <label>Test Raporu</label>
-              <input 
-                v-model="halatForm.testRaporu" 
-                type="text" 
-                placeholder="Test rapor no"
-              >
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" v-model="halatForm.paslanmaz">
-                <span>🔧 Paslanmaz Çelik</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group full-width">
-              <label>Kullanım Alanı</label>
-              <textarea 
-                v-model="halatForm.kullanimAlani" 
-                rows="2"
-                placeholder="Önerilen kullanım alanları..."
-              ></textarea>
-            </div>
-          </div>
-        </template>
-      </MaterialForm>
+    <BaseModal v-if="showModal" :title="modalMode === 'add' ? 'Yeni Halat Ekle' : 'Halat Düzenle'" size="large"
+      @close="closeModal">
+      <MaterialForm :mode="modalMode" :item="editingItem" :malzemeCinsiOptions="halatCinsiOptions" @save="saveItem"
+        @cancel="closeModal" />
     </BaseModal>
   </div>
 </template>
@@ -303,123 +129,104 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useHalatStore } from '../store/halatStore'
-import type { HalatItem } from '../types/common'
+import type { HalatItem } from '../types/halat'
 import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import FiltersSection from '../components/FiltersSection.vue'
 import BaseDataTable from '../components/BaseDataTable.vue'
 import BaseModal from '../components/BaseModal.vue'
 import MaterialForm from '../components/MaterialForm.vue'
-import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
+
 // Store
 const store = useHalatStore()
-
+const onPageChange = (page: number) => {
+  currentPage.value = page
+}
 // State
 const selectedItems = ref<string[]>([])
 const viewDensity = ref<'compact' | 'normal' | 'detailed'>('normal')
 const itemsPerPage = ref(25)
 const currentPage = ref(1)
 const searchText = ref('')
-const sortField = ref('girisTarihi')
+const sortField = ref('createdAt')
 const sortDirection = ref<'asc' | 'desc'>('desc')
 const showModal = ref(false)
 const modalMode = ref<'add' | 'edit'>('add')
 const editingItem = ref<HalatItem | null>(null)
 
-// Halata özel form alanları
-const halatForm = reactive({
-  cap: undefined as number | undefined,
-  yapisi: '',
-  dayanim: undefined as number | undefined,
-  uzunluk: undefined as number | undefined,
-  gramaj: undefined as number | undefined,
-  sertifikaNo: '',
-  testRaporu: '',
-  paslanmaz: false,
-  kullanimAlani: ''
-})
-
 // Halat cinsi seçenekleri
 const halatCinsiOptions = [
   { value: 'celik', label: 'Çelik Halat' },
-  { value: 'paslanmaz', label: 'Paslanmaz Çelik Halat' },
-  { value: 'galvaniz', label: 'Galvaniz Halat' },
   { value: 'sentetik', label: 'Sentetik Halat' },
-  { value: 'karma', label: 'Karma Halat' },
-  { value: 'diger', label: 'Diğer' }
+  { value: 'karma', label: 'Karma Halat' }
 ]
 
+// Filtreler
 const filters = reactive({
-  malzemeTuru: '',
-  malzemeCinsi: '',
-  stockStatus: '',
-  proje: '',
-  rafNo: ''
+  kalite: '',
+  cins: '',
+  tedarikci: '',
+  depo: '',
+  raf: ''
 })
 
-// Computed
-const filteredItems = computed(() => {
-  let items = store.items
+// İstatistikler
+const halatStatistics = computed(() => ({
+  totalItems: store.items.length,
+  totalValue: store.items.reduce((sum, item) => sum + ((item.stok ?? 0) * (item.birimFiyat ?? 0)), 0),
+  lowStock: store.items.filter(item => (item.stok ?? 0) <= (item.minStokSeviyesi ?? 5)).length,
+  recentlyAdded: store.items.filter(item => {
+    if (!item.createdAt) return false
+    const created = new Date(item.createdAt)
+    const now = new Date()
+    return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear()
+  }).length
+}))
 
-  // Search filter
+// Filtreli ve sıralı liste
+const filteredItems = computed(() => {
+  let items = store.items // Access items directly from the store
+  // Search
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    items = items.filter((item: HalatItem) => 
-      item.kalite?.toLowerCase().includes(search) ||
-      item.malzemeTuru?.toLowerCase().includes(search) ||
-      item.cins?.toLowerCase().includes(search) ||
-      item.proje?.toLowerCase().includes(search) ||
-      item.tedarikci?.toLowerCase().includes(search) ||
-      item.cap?.toString().includes(search)
-    )
+    items = items.filter(item => {
+      const matchesSearch =
+        (item.kalite || '').toLowerCase().includes(search) ||
+        (item.name || '').toLowerCase().includes(search) ||
+        (item.cins || '').toLowerCase().includes(search) ||
+        (item.tedarikci || '').toLowerCase().includes(search) ||
+        (item.cap?.toString() || '').includes(search)
+      return matchesSearch
+    })
   }
-
-  // Apply filters
+  // Filters
   Object.entries(filters).forEach(([key, value]) => {
     if (value) {
-      if (key === 'proje' && value === '!Stok') {
-        items = items.filter((item: any) => item.proje && item.proje !== 'Stok')
-      } else if (key === 'stockStatus') {
-        items = items.filter((item: any) => {
-          const percentage = getStockPercentage(item)
-          switch (value) {
-            case 'sufficient': return percentage > 20
-            case 'low': return percentage >= 10 && percentage <= 20
-            case 'critical': return percentage > 0 && percentage < 10
-            case 'empty': return percentage === 0
-            default: return true
-          }
-        })
-      } else if (key === 'malzemeCinsi') {
-        items = items.filter((item: any) => item.cins === value)
-      } else {
-        items = items.filter((item: any) => item[key] === value)
-      }
+      items = items.filter(item => {
+        const filterCondition = (item as any)[key] === value
+        return filterCondition
+      })
     }
   })
-
   // Sort
-  items.sort((a: any, b: any) => {
-    const aVal = a[sortField.value] ?? ''
-    const bVal = b[sortField.value] ?? ''
-    
-    if (sortDirection.value === 'asc') {
-      return aVal > bVal ? 1 : -1
-    } else {
-      return aVal < bVal ? 1 : -1
-    }
+  items = [...items]
+  items.sort((a, b) => {
+    const aVal = (a as any)[sortField.value] ?? ''
+    const bVal = (b as any)[sortField.value] ?? ''
+    if (sortDirection.value === 'asc') return aVal > bVal ? 1 : -1
+    else return aVal < bVal ? 1 : -1
   })
-
   return items
 })
 
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
-  return filteredItems.value.slice(start, end)
+  const data = filteredItems.value.slice(start, end)
+  return data
 })
 
-// Methods - Standard methods (same pattern as other pages)
+// Methods
 const fetchData = async () => {
   await store.fetchItems()
 }
@@ -436,33 +243,29 @@ const onSearchChange = (search: string) => {
 
 const clearFilters = () => {
   Object.assign(filters, {
-    malzemeTuru: '',
-    malzemeCinsi: '',
-    stockStatus: '',
-    proje: '',
-    rafNo: ''
+    kalite: '',
+    cins: '',
+    tedarikci: '',
+    depo: '',
+    raf: ''
   })
   searchText.value = ''
   currentPage.value = 1
 }
 
 const showOnlyStock = () => {
-  filters.proje = 'Stok'
+  Object.assign(filters, { stok: 'stokta' })
   currentPage.value = 1
 }
 
 const showProjectAssigned = () => {
-  filters.proje = '!Stok'
+  Object.assign(filters, { proje: 'atanmis' })
   currentPage.value = 1
 }
 
 const onItemsChange = (count: string) => {
   itemsPerPage.value = parseInt(count)
   currentPage.value = 1
-}
-
-const onPageChange = (page: number) => {
-  currentPage.value = page
 }
 
 const sortBy = (field: string) => {
@@ -479,67 +282,15 @@ const getSortIcon = (field: string) => {
   return sortDirection.value === 'asc' ? '⬆️' : '⬇️'
 }
 
-const toggleSelectAll = () => {
-  if (selectedItems.value.length === paginatedData.value.length) {
-    selectedItems.value = []
-  } else {
-    selectedItems.value = paginatedData.value.map(item => item._id || item.id || '')
-  }
-}
-
-const onItemSelect = (itemId: string) => {
-  const index = selectedItems.value.indexOf(itemId)
-  if (index > -1) {
-    selectedItems.value.splice(index, 1)
-  } else {
-    selectedItems.value.push(itemId)
-  }
-}
-
 const openAddModal = () => {
   modalMode.value = 'add'
   editingItem.value = null
-  // Reset halat form
-  Object.assign(halatForm, {
-    cap: undefined,
-    yapisi: '',
-    dayanim: undefined,
-    uzunluk: undefined,
-    gramaj: undefined,
-    sertifikaNo: '',
-    testRaporu: '',
-    paslanmaz: false,
-    kullanimAlani: ''
-  })
   showModal.value = true
 }
 
 const editItem = (item: HalatItem) => {
   modalMode.value = 'edit'
   editingItem.value = item
-  // Fill halat form with item data
-  Object.assign(halatForm, {
-    cap: item.cap,
-    yapisi: item.yapisi || '',
-    dayanim: item.dayanim,
-    uzunluk: item.uzunluk,
-    gramaj: item.gramaj,
-    sertifikaNo: item.sertifikaNo || '',
-    testRaporu: item.testRaporu || '',
-    paslanmaz: item.paslanmaz || false,
-    kullanimAlani: item.kullanimAlani || ''
-  })
-  showModal.value = true
-}
-
-const duplicateItem = (item: HalatItem) => {
-  modalMode.value = 'add'
-  editingItem.value = { 
-    ...item, 
-    _id: undefined, 
-    id: undefined,
-    girisTarihi: new Date().toISOString().split('T')[0] 
-  }
   showModal.value = true
 }
 
@@ -550,25 +301,13 @@ const closeModal = () => {
 
 const saveItem = async (itemData: any) => {
   try {
-    // Safe cins conversion for halat
-    const finalData = {
-      ...itemData,
-      ...halatForm,
-      malzemeTuru: 'halat' as const,
-      // ✅ SAFE CINS CONVERSION
-      cins: ['celik', 'sentetik', 'karma'].includes(halatForm.cins) 
-        ? halatForm.cins as 'celik' | 'sentetik' | 'karma'
-        : 'celik'  // default fallback
-    }
-    
     if (modalMode.value === 'add') {
-      await store.addItem(finalData)
-    } else {
-      await store.updateItem(itemData._id || itemData.id || '', finalData)
+      await store.addItem(itemData)
+    } else if (editingItem.value) {
+      await store.updateItem(editingItem.value._id, itemData)
     }
     closeModal()
   } catch (error) {
-    console.error('Save error:', error)
     alert('Kayıt sırasında bir hata oluştu!')
   }
 }
@@ -576,11 +315,9 @@ const saveItem = async (itemData: any) => {
 const deleteItem = async (item: HalatItem) => {
   if (confirm(`"${item.kalite} - ${item.cins}" halatını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
     try {
-      await store.deleteItem(item._id || item.id || '')
-      const itemId = item._id || item.id || ''
-      selectedItems.value = selectedItems.value.filter(id => id !== itemId)
+      await store.deleteItem(item._id)
+      selectedItems.value = selectedItems.value.filter(id => id !== item._id)
     } catch (error) {
-      console.error('Delete error:', error)
       alert('Silme sırasında bir hata oluştu!')
     }
   }
@@ -592,61 +329,49 @@ const viewItemDetails = (item: HalatItem) => {
 
 🔗 Temel Bilgiler:
 • Kalite: ${item.kalite || 'Belirtilmemiş'}
-• Tür: ${item.malzemeTuru || 'Belirtilmemiş'}
-• Cins: ${item.cins || 'Belirtilmemiş'}
+• Adı: ${item.name || 'Belirtilmemiş'}
+• Cins: ${getCinsiLabel(item.cins || 'celik')}
 • Çap: ${item.cap || 0} mm
 
-🏗️ Teknik Özellikler:
-• Yapısı: ${item.yapisi || 'Belirtilmemiş'}
-• Dayanım: ${item.dayanim || 0} kg
-• Uzunluk: ${item.uzunluk || 0} m
-• Gramaj: ${item.gramaj || 0} g/m
-${item.paslanmaz ? '• Paslanmaz Çelik: Evet' : ''}
-
 📦 Stok Durumu:
-• Giriş: ${item.girisMiktar || 0} m
-• Çıkış: ${item.cikisMiktar || 0} m
-• Kalan: ${item.kalanMiktar || 0} m
-• Durum: ${getStockStatusLabel(item)} (%${getStockPercentage(item)})
+• Stok: ${item.stok || 0} ${item.birim || ''}
+• Min Stok: ${item.minStokSeviyesi ?? '-'}
+• Max Stok: ${item.maxStokSeviyesi ?? '-'}
 
 💰 Fiyat Bilgileri:
-• Alış: ${formatPrice(item.satinAlisFiyati ?? 0, item.dovizKur)}
-${item.dovizKur && item.dovizKur !== 1 ? `• Döviz: ${item.satinAlisFiyati || 0} ${item.paraBirimi || 'USD'} × ${item.dovizKur}` : ''}
+• Birim Fiyat: ${item.birimFiyat ?? '-'} ${item.paraBirimi || ''}
 • Tedarikçi: ${item.tedarikci || 'Belirtilmemiş'}
 
 📍 Lokasyon:
-• Proje: ${item.proje || 'Stok'}
-• Raf: ${item.rafNo || 'Belirtilmemiş'}
-${item.sertifikaNo ? `• Sertifika: ${item.sertifikaNo}` : ''}
-${item.testRaporu ? `• Test Raporu: ${item.testRaporu}` : ''}
+• Depo: ${item.depo || '-'}
+• Raf: ${item.raf || '-'}
 
-🔧 Kullanım:
-${item.kullanimAlani || 'Kullanım alanı belirtilmemiş'}
+📝 Açıklama:
+${item.aciklama || '-'}
 
-📅 Tarihler:
-• Giriş: ${formatDate(item.girisTarihi)}
-• Yaş: ${getItemAge(item.girisTarihi)}
+📅 Eklenme: ${formatDate(item.createdAt)}
   `
   alert(details)
 }
 
 const exportStock = () => {
   const csvContent = [
-    'Kalite,Cins,Çap,Yapısı,Dayanım,Uzunluk,Stok,Birim,Fiyat,Tedarikçi,Proje,Raf,Tarih',
+    'Adı,Kalite,Cins,Çap,Uzunluk,Stok,Birim,Birim Fiyat,Para Birimi,Tedarikçi,Depo,Raf,Açıklama,Eklenme',
     ...filteredItems.value.map(item => [
-      item.kalite,
+      item.name,
+      item.kalite || '',
       item.cins,
       item.cap || '',
-      item.yapisi || '',
-      item.dayanim || '',
       item.uzunluk || '',
-      item.kalanMiktar,
-      item.birim || 'm',
-      formatPrice(item.satinAlisFiyati ?? 0, item.dovizKur ?? 1),
+      item.stok,
+      item.birim || '',
+      item.birimFiyat ?? '',
+      item.paraBirimi || '',
       item.tedarikci || '',
-      item.proje || 'Stok',
-      item.rafNo,
-      formatDate(item.girisTarihi)
+      item.depo || '',
+      item.raf || '',
+      item.aciklama || '',
+      formatDate(item.createdAt)
     ].join(','))
   ].join('\n')
 
@@ -659,23 +384,30 @@ const exportStock = () => {
   URL.revokeObjectURL(url)
 }
 
-// Utility functions
-const formatHalatDimensions = (item: any) => {
-  const parts: string[] = []
-  if (item.cap) parts.push(`Ø${item.cap}mm`)
-  if (item.yapisi) parts.push(item.yapisi)
-  return parts.length > 0 ? parts.join(' • ') : 'Boyut belirtilmemiş'
-}
-
-const formatPrice = (price: number, exchangeRate: number = 1) => {
-  if (!price) return 'Fiyat belirtilmemiş'
-  const tlPrice = price * exchangeRate
-  return `${tlPrice.toLocaleString('tr-TR')} ₺`
+const getCinsiLabel = (cins: string) => {
+  const found = halatCinsiOptions.find(opt => opt.value === cins)
+  return found ? found.label : cins
 }
 
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'Tarih belirtilmemiş'
   return new Date(dateStr).toLocaleDateString('tr-TR')
+}
+
+// Add these utility functions
+const getStockStatusClass = (item: HalatItem) => {
+  const stok = item.stok || 0
+  const minStok = item.minStokSeviyesi || 5
+
+  if (stok === 0) return 'empty'
+  if (stok <= minStok / 2) return 'critical'
+  if (stok <= minStok) return 'low'
+  return 'sufficient'
+}
+
+const formatPrice = (price?: number, currency = 'TL') => {
+  if (!price) return '-'
+  return `${price.toLocaleString('tr-TR')} ${currency}`
 }
 
 const getItemAge = (dateStr?: string) => {
@@ -684,47 +416,40 @@ const getItemAge = (dateStr?: string) => {
   const now = new Date()
   const diffTime = Math.abs(now.getTime() - date.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 30) return `${diffDays} gün önce`
   if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`
   return `${Math.floor(diffDays / 365)} yıl önce`
 }
 
-const getStockPercentage = (item: any) => {
-  const kalan = parseFloat(item.kalanMiktar || '0')
-  const giris = parseFloat(item.girisMiktar || '0')
-  return giris > 0 ? Math.round((kalan / giris) * 100) : 0
-}
-
-const getStockStatusClass = (item: any) => {
-  const percentage = getStockPercentage(item)
-  if (percentage === 0) return 'empty'
-  if (percentage < 10) return 'critical'
-  if (percentage < 20) return 'low'
-  return 'sufficient'
-}
-
-const getStockStatusLabel = (item: any) => {
-  const percentage = getStockPercentage(item)
-  if (percentage === 0) return 'Tükendi'
-  if (percentage < 10) return 'Kritik'
-  if (percentage < 20) return 'Düşük'
-  return 'Yeterli'
-}
-
-const getHalatCinsiClass = (cins: string) => {
-  const classes = {
-    'celik': 'cins-celik',
-    'paslanmaz': 'cins-paslanmaz',
-    'galvaniz': 'cins-galvaniz',
-    'sentetik': 'cins-sentetik',
-    'karma': 'cins-karma',
-    'diger': 'cins-other'
+// Add these new functions before onMounted()
+const toggleSelectAll = () => {
+  if (selectedItems.value.length === paginatedData.value.length) {
+    selectedItems.value = []
+  } else {
+    selectedItems.value = paginatedData.value.map(item => item._id)
   }
-  return classes[cins as keyof typeof classes] || 'cins-other'
 }
 
-// Lifecycle
+const onItemSelect = (itemId: string) => {
+  const index = selectedItems.value.indexOf(itemId)
+  if (index > -1) {
+    selectedItems.value.splice(index, 1)
+  } else {
+    selectedItems.value.push(itemId)
+  }
+}
+
+const duplicateItem = (item: HalatItem) => {
+  modalMode.value = 'add'
+  editingItem.value = {
+    ...item,
+    _id: '',
+    createdAt: new Date().toISOString()
+  }
+  showModal.value = true
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -792,12 +517,35 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-.cins-celik { background: #374151; color: white; }
-.cins-paslanmaz { background: #e5e7eb; color: #374151; }
-.cins-galvaniz { background: #fef3c7; color: #92400e; }
-.cins-sentetik { background: #dcfce7; color: #166534; }
-.cins-karma { background: #e0f2fe; color: #0369a1; }
-.cins-other { background: #f3f4f6; color: #6b7280; }
+.cins-celik {
+  background: #374151;
+  color: white;
+}
+
+.cins-paslanmaz {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cins-galvaniz {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cins-sentetik {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cins-karma {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.cins-other {
+  background: #f3f4f6;
+  color: #6b7280;
+}
 
 .construction-info {
   font-size: 10px;
@@ -857,10 +605,21 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.stock-numbers .current.sufficient { color: #10b981; }
-.stock-numbers .current.low { color: #f59e0b; }
-.stock-numbers .current.critical { color: #ef4444; }
-.stock-numbers .current.empty { color: #9ca3af; }
+.stock-numbers .current.sufficient {
+  color: #10b981;
+}
+
+.stock-numbers .current.low {
+  color: #f59e0b;
+}
+
+.stock-numbers .current.critical {
+  color: #ef4444;
+}
+
+.stock-numbers .current.empty {
+  color: #9ca3af;
+}
 
 .separator {
   color: #9ca3af;
@@ -884,10 +643,21 @@ onMounted(() => {
   border-radius: 2px;
 }
 
-.stock-progress.sufficient { background: #10b981; }
-.stock-progress.low { background: #f59e0b; }
-.stock-progress.critical { background: #ef4444; }
-.stock-progress.empty { background: #9ca3af; }
+.stock-progress.sufficient {
+  background: #10b981;
+}
+
+.stock-progress.low {
+  background: #f59e0b;
+}
+
+.stock-progress.critical {
+  background: #ef4444;
+}
+
+.stock-progress.empty {
+  background: #9ca3af;
+}
 
 .stock-label {
   display: flex;
@@ -896,10 +666,21 @@ onMounted(() => {
   font-size: 11px;
 }
 
-.stock-label span.sufficient { color: #10b981; }
-.stock-label span.low { color: #f59e0b; }
-.stock-label span.critical { color: #ef4444; }
-.stock-label span.empty { color: #9ca3af; }
+.stock-label span.sufficient {
+  color: #10b981;
+}
+
+.stock-label span.low {
+  color: #f59e0b;
+}
+
+.stock-label span.critical {
+  color: #ef4444;
+}
+
+.stock-label span.empty {
+  color: #9ca3af;
+}
 
 .percentage {
   color: #9ca3af;
@@ -1001,16 +782,58 @@ onMounted(() => {
   color: #6b7280;
 }
 
-/* Form styling */
-.form-group.full-width {
-  grid-column: span 2;
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
 }
 
-.checkbox-group .checkbox-label {
-  display: flex;
+td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* Action Column Styles */
+.actions-col {
+  text-align: right !important;
+  white-space: nowrap;
+  padding-right: 1rem !important;
+}
+
+.actions-col button {
+  margin-left: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Responsive */
@@ -1018,7 +841,7 @@ onMounted(() => {
   .halat-page {
     padding: 10px;
   }
-  
+
   .material-info,
   .dimensions-cell,
   .stock-cell,
@@ -1026,8 +849,9 @@ onMounted(() => {
   .location-cell {
     min-width: auto;
   }
-  
+
   .form-group.full-width {
     grid-column: span 1;
   }
 }
+</style>

@@ -1,3 +1,4 @@
+
 // frontend/src/types/membran.ts
 export interface Membran {
   _id?: string

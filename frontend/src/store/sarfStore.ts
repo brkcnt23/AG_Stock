@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { sarfService } from '../services/sarfService'
-import type { SarfItem } from '../types/common'  // SarfItem kullan
+import type { SarfItem } from '../types/common'
 import { getErrorMessage } from '../utils/errorHelpers'
 
 export const useSarfStore = defineStore('sarf', () => {
@@ -10,7 +10,7 @@ export const useSarfStore = defineStore('sarf', () => {
   const currentItem = ref<SarfItem | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-
+  
   // Pagination
   const pagination = ref({
     page: 1,
@@ -48,32 +48,21 @@ export const useSarfStore = defineStore('sarf', () => {
       clearError()
 
       const response = await sarfService.getSarf(params)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         // API'den gelen Sarf'ı SarfItem'a dönüştür
-        const dataArray = Array.isArray(response.data) ? response.data : [response.data]
-        items.value = dataArray.map(item => ({
+        const dataArray = Array.isArray(res.data) ? res.data : [res.data]
+        items.value = dataArray.map((item: any) => ({
           ...item,
           malzemeTuru: 'sarf' as const  // SarfItem için zorunlu alan
         }))
-
-        if (response.page !== undefined && response.limit !== undefined && response.total !== undefined) {
-          const page = response.page
-          const limit = response.limit
-          const totalCount = response.total
-          const totalPages = Math.ceil(totalCount / limit)
-
-          pagination.value = {
-            page,
-            limit,
-            totalCount,
-            totalPages,
-            hasNextPage: page < totalPages,
-            hasPrevPage: page > 1
-          }
-        } else {
-          throw new Error(response.message || 'Sarf verileri getirilemedi')
+        
+        if (res.pagination) {
+          pagination.value = res.pagination
         }
+      } else {
+        throw new Error(res.message || 'Sarf verileri getirilemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -90,17 +79,18 @@ export const useSarfStore = defineStore('sarf', () => {
       setLoading(true)
       clearError()
 
-      const response = await sarfService.getSarf(id)
+      const response = await sarfService.getSarfById(id)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         // API'den gelen Sarf'ı SarfItem'a dönüştür
         currentItem.value = {
-          ...response.data,
+          ...res.data,
           malzemeTuru: 'sarf' as const  // SarfItem için zorunlu alan
         }
         return currentItem.value
       } else {
-        throw new Error(response.message || 'Sarf malzeme bulunamadı')
+        throw new Error(res.message || 'Sarf malzeme bulunamadı')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -124,17 +114,18 @@ export const useSarfStore = defineStore('sarf', () => {
       }
 
       const response = await sarfService.createSarf(apiData)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         // API'den gelen Sarf'ı SarfItem'a dönüştür
         const newItem: SarfItem = {
-          ...response.data,
+          ...res.data,
           malzemeTuru: 'sarf' as const
         }
         items.value.unshift(newItem)
         return newItem
       } else {
-        throw new Error(response.message || 'Sarf malzeme eklenemedi')
+        throw new Error(res.message || 'Sarf malzeme eklenemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -158,11 +149,12 @@ export const useSarfStore = defineStore('sarf', () => {
       }
 
       const response = await sarfService.updateSarf(id, apiData)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         // API'den gelen Sarf'ı SarfItem'a dönüştür
         const updatedItem: SarfItem = {
-          ...response.data,
+          ...res.data,
           malzemeTuru: 'sarf' as const
         }
 
@@ -170,14 +162,14 @@ export const useSarfStore = defineStore('sarf', () => {
         if (index !== -1) {
           items.value[index] = updatedItem
         }
-
+        
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = updatedItem
         }
-
+        
         return updatedItem
       } else {
-        throw new Error(response.message || 'Sarf malzeme güncellenemedi')
+        throw new Error(res.message || 'Sarf malzeme güncellenemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -195,15 +187,16 @@ export const useSarfStore = defineStore('sarf', () => {
       clearError()
 
       const response = await sarfService.deleteSarf(id)
+      const res = response.data
 
-      if (response.success) {
+      if (res.success) {
         items.value = items.value.filter(item => item._id !== id && item.id !== id)
-
+        
         if (currentItem.value && (currentItem.value._id === id || currentItem.value.id === id)) {
           currentItem.value = null
         }
       } else {
-        throw new Error(response.message || 'Sarf malzeme silinemedi')
+        throw new Error(res.message || 'Sarf malzeme silinemedi')
       }
     } catch (err) {
       const message = getErrorMessage(err)
@@ -247,12 +240,12 @@ export const useSarfStore = defineStore('sarf', () => {
     error,
     pagination,
     statistics,
-
+    
     // Computed
     hasData,
     isLoading,
     hasError,
-
+    
     // Actions
     fetchItems,
     fetchItem,

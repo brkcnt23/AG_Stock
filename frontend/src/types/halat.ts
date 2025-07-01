@@ -1,32 +1,23 @@
 // frontend/src/types/halat.ts - Halat type definitions
 export interface HalatItem {
-  _id: string
-  id: string // String version for UI compatibility
+  _id: string // MongoDB'den gelen orijinal ID
   name: string
-  kalite?: string
+  kalite: string
   cins: 'celik' | 'sentetik' | 'karma'
-  cap: number // mm
-  uzunluk?: number // meter
+  cap: number
+  uzunluk?: number
   stok: number
   birim: string
   birimFiyat?: number
-  parabirimi?: 'TL' | 'USD' | 'EUR'
+  paraBirimi?: string
   tedarikci?: string
   minStokSeviyesi?: number
   maxStokSeviyesi?: number
   depo?: string
   raf?: string
   aciklama?: string
-  ozellikler?: {
-    yuk_kapasitesi?: number
-    kopma_yukleri?: number
-    elastikiyet?: string
-    isi_direnci?: string
-    kimyasal_direnç?: string
-    [key: string]: any
-  }
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface HalatFilter {

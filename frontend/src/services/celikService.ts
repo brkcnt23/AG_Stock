@@ -1,33 +1,28 @@
 // frontend/src/services/celikService.ts
-import { BaseApiService } from './baseApiService';
-import type { CelikItem } from '@/types/common';
-import type { ApiResponse, Statistics } from '@/types/common';
+import axios from 'axios';
+import type { CelikItem } from '../types/celik';  // celikTypes yerine celik'ten import et
+import type { ApiResponse } from '../types/api';
 
-export class CelikService extends BaseApiService<CelikItem> {
-  constructor() {
-    super('/celik');
+const API_URL = '/api/celik';
+
+export const celikService = {
+  getAll(params?: any) {
+    return axios.get<ApiResponse<CelikItem[]>>(API_URL, { params }).then(res => res.data);
+  },
+
+  getById(id: string) {
+    return axios.get<ApiResponse<CelikItem>>(`${API_URL}/${id}`).then(res => res.data);
+  },
+
+  create(data: Partial<CelikItem>) {
+    return axios.post<ApiResponse<CelikItem>>(API_URL, data).then(res => res.data);
+  },
+
+  update(id: string, data: Partial<CelikItem>) {
+    return axios.put<ApiResponse<CelikItem>>(`${API_URL}/${id}`, data).then(res => res.data);
+  },
+
+  delete(id: string) {
+    return axios.delete<ApiResponse<null>>(`${API_URL}/${id}`).then(res => res.data);
   }
-
-  /**
-   * Malzemeye özel istatistikleri getirir.
-   */
-  async getStatistics(): Promise<ApiResponse<Statistics>> {
-    const response = await this.api.get<ApiResponse<Statistics>>(`${this.basePath}/stats`);
-    return response.data;
-  }
-
-  /**
-   * Stoğa özel rezervasyon yapar.
-   * @param id Stok öğesinin ID'si
-   * @param quantity Rezerve edilecek miktar
-   */
-  async reserve(id: string, quantity: number): Promise<ApiResponse<CelikItem>> {
-    const response = await this.api.post<ApiResponse<CelikItem>>(
-      `${this.basePath}/${id}/reserve`,
-      { quantity }
-    );
-    return response.data;
-  }
-}
-
-export const celikService = new CelikService();
+};
