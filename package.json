@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts"
+    "dev": "concurrently \"cd backend && pnpm dev\" \"cd frontend && pnpm dev\"",
+    "build": "concurrently \"cd backend && pnpm build\" \"cd frontend && pnpm build\"",
+    "start": "cd backend && pnpm start"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^24.0.7",
     "ts-node-dev": "^2.0.0"
   }

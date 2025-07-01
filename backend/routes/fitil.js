@@ -1,36 +1,21 @@
 // backend/routes/fitil.js
 const express = require('express');
-const fitilRouter = express.Router();
-const {
-  getFitilItems,
-  getFitilById,
-  createFitil,
-  updateFitil,
-  deleteFitil,
-  getFitilStats,
-  bulkFitilOperations
-} = require('../controllers/fitilController');
-const { validateObjectIdParam } = require('../utils/objectId');
+const router = express.Router();
+const { fitilController } = require('../controllers/fitilController');
 
-// GET /api/fitil/stats
-fitilRouter.get('/stats', getFitilStats);
+// GET tüm fitilleri getir
+router.get('/', fitilController.getFitils);
 
-// GET /api/fitil
-fitilRouter.get('/', getFitilItems);
+// GET tek fitil getir
+router.get('/:id', fitilController.getFitilById);
 
-// GET /api/fitil/:id
-fitilRouter.get('/:id', validateObjectIdParam('id'), getFitilById);
+// POST yeni fitil ekle
+router.post('/', fitilController.createFitil);
 
-// POST /api/fitil
-fitilRouter.post('/', createFitil);
+// PUT fitil güncelle
+router.put('/:id', fitilController.updateFitil);
 
-// PUT /api/fitil/:id
-fitilRouter.put('/:id', validateObjectIdParam('id'), updateFitil);
+// DELETE fitil sil
+router.delete('/:id', fitilController.deleteFitil);
 
-// DELETE /api/fitil/:id
-fitilRouter.delete('/:id', validateObjectIdParam('id'), deleteFitil);
-
-// POST /api/fitil/bulk
-fitilRouter.post('/bulk', bulkFitilOperations);
-
-module.exports = fitilRouter;
+module.exports = router;
