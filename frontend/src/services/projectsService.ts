@@ -39,11 +39,43 @@ class ProjectsService extends BaseApiService<Project> {
   }
 
   async checkMaterialStock(materialId: string, materialType: string, quantity: number) {
-    const response = await this.api.get(`${this.basePath}/check-stock`, {
-      params: { materialId, materialType, quantity }
-    })
-    return response.data
+    console.log('🔍 Frontend - checkMaterialStock çağrıldı');
+    console.log('📤 Gönderilen parametreler:', { materialId, materialType, quantity });
+
+    // Parametreleri kontrol et
+    if (!materialId) {
+      console.error('❌ materialId boş!');
+      throw new Error('materialId gerekli');
+    }
+
+    if (!materialType) {
+      console.error('❌ materialType boş!');
+      throw new Error('materialType gerekli');
+    }
+
+    if (!quantity || quantity <= 0) {
+      console.error('❌ quantity geçersiz:', quantity);
+      throw new Error('quantity geçerli bir sayı olmalı');
+    }
+
+    try {
+      const response = await this.api.get(`${this.basePath}/check-stock`, {
+        params: { materialId, materialType, quantity }
+      });
+
+      console.log('✅ Stok kontrolü başarılı:', response.data);
+      return response.data;
+
+    } catch (error) {
+      console.error('❌ Stok kontrolü hatası:', error);
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        // @ts-expect-error: We are narrowing error to have response
+        console.error('❌ Error response:', error.response?.data);
+        // @ts-expect-error: We are narrowing error to have response
+        console.error('❌ Error status:', error.response?.status);
+      }
+      throw error;
+    }
   }
 }
-
-export const projectsService = new ProjectsService()
+  export const projectsService = new ProjectsService()

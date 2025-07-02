@@ -32,14 +32,23 @@ const validateObjectId = (req, res, next) => {
 router.use('/:id', validateObjectId);
 
 
-// Malzeme stok kontrolü - ObjectId ile
+// Malzeme stok kontrolü - ObjectId ile (DEBUG VERSİYONU)
 async function checkMaterialStock(materialId, materialType, requestedQuantity) {
   try {
+    console.log('🔍 checkMaterialStock fonksiyonu başlatıldı');
+    console.log('📋 Parametreler:', { materialId, materialType, requestedQuantity });
+    
     const Model = getModelByType(materialType);
-    if (!Model) throw new Error(`Geçersiz malzeme türü: ${materialType}`);
+    if (!Model) {
+      console.error('❌ Geçersiz malzeme türü:', materialType);
+      throw new Error(`Geçersiz malzeme türü: ${materialType}`);
+    }
+    
+    console.log('✅ Model bulundu:', Model.modelName);
     
     const material = await Model.findById(materialId);
     if (!material) {
+      console.log('❌ Malzeme bulunamadı, ID:', materialId);
       return {
         found: false,
         available: false,
@@ -47,6 +56,9 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
         material: null
       };
     }
+    
+    console.log('✅ Malzeme bulundu:', material.malzeme || material.name || 'İsimsiz');
+    console.log('📦 Malzeme verisi:', JSON.stringify(material, null, 2));
     
     // Stok miktarını materialType'a göre al
     let availableStock = 0;
@@ -56,15 +68,18 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       case 'halat':
       case 'fitil':
         availableStock = parseFloat(material.kalanMiktar || '0');
+        console.log('📊 Kalan miktar (sarf/celik/halat/fitil):', availableStock);
         break;
       case 'membran':
         availableStock = parseFloat(material.topSayisi || '0');
+        console.log('📊 Top sayısı (membran):', availableStock);
         break;
     }
     
     const sufficient = availableStock >= requestedQuantity;
+    console.log('✅ Stok yeterli mi?', sufficient, `(${availableStock} >= ${requestedQuantity})`);
     
-    return {
+    const result = {
       found: true,
       available: sufficient,
       availableStock,
@@ -79,8 +94,13 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
         supplier: material.tedarikci
       }
     };
+    
+    console.log('📤 checkMaterialStock sonucu:', result);
+    return result;
+    
   } catch (error) {
-    console.error(`❌ Stok kontrolü hatası:`, error);
+    console.error(`❌ checkMaterialStock hatası:`, error);
+    console.error('❌ Error stack:', error.stack);
     return {
       found: false,
       available: false,
