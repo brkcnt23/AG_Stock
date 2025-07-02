@@ -1,9 +1,12 @@
 // frontend/src/main.ts - Clean entry point without MongoDB
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import Toast, { POSITION } from 'vue-toastification'
+import 'vue-toastification/dist/index.css'
 import App from './App.vue'
 import router from './router'
-import './assets/style.css'
+import './style.css'
+import { PluginOptions } from 'vue-toastification/dist/types/src/types'
 
 // Extend Window interface for __PINIA__ property
 declare global {
@@ -31,7 +34,26 @@ app.config.errorHandler = (err, _vm, info) => {
     // Example: Sentry.captureException(err)
   }
 }
-
+const toastOptions: PluginOptions = {
+  position: POSITION.TOP_RIGHT,
+  timeout: 4000,
+  closeOnClick: true,
+  pauseOnFocusLoss: true,
+  pauseOnHover: true,
+  draggable: true,
+  draggablePercent: 0.6,
+  showCloseButtonOnHover: false,
+  hideProgressBar: false,
+  closeButton: "button",
+  icon: true,
+  rtl: false,
+  maxToasts: 5,
+  newestOnTop: true,
+  transition: "Vue-Toastification__bounce",
+  toastClassName: "custom-toast",
+  bodyClassName: ["custom-toast-body"],
+  containerClassName: ["custom-toast-container"]
+}
 // Global warning handler
 app.config.warnHandler = (msg, _vm, trace) => {
   console.warn('Global warning:', msg, trace)

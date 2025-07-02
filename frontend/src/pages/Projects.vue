@@ -66,7 +66,8 @@
               {{ getStatusLabel(project.status) }}
             </span>
             <div class="project-dates">
-              <small>{{ formatDate(project.startDate ?? undefined) }} - {{ formatDate(project.endDate ?? undefined) }}</small>
+              <small>{{ formatDate(project.startDate ?? undefined) }} - {{ formatDate(project.endDate ?? undefined)
+              }}</small>
             </div>
           </div>
         </div>
@@ -120,8 +121,9 @@
             👁️ Detaylar
           </button>
 
+          <!-- Rezerve Et Butonu - Düzeltilmiş -->
           <button v-if="project.status === 'planning'" @click="reserveMaterials(project)"
-            :disabled="(project.availableItems || 0) === 0" class="btn btn-warning">
+            :disabled="!project.materials || project.materials.length === 0" class="btn btn-warning">
             🔒 Rezerve Et
           </button>
 
@@ -156,7 +158,9 @@
 
     <!-- Yeni Proje Modal -->
     <CreateProjectModal v-if="showCreateModal" @close="closeCreateModal" @save="saveProject" />
-
+    <!-- Edit Modal - YENİ -->
+    <EditProjectModal v-if="showEditModal && editingProject" :project="editingProject" @close="closeEditModal"
+      @save="updateProject" />
     <!-- Proje Detay Modal -->
     <ProjectDetailsModal v-if="showDetailsModal && selectedProject" :project="selectedProject"
       @close="closeDetailsModal" @reserve="reserveMaterials" @start="startProject" @complete="completeProject"
@@ -170,16 +174,21 @@ import { ref, computed, onMounted } from 'vue'
 import { ObjectId } from 'mongodb'
 import { objectIdToString, isValidObjectId } from '../utils/objectId'
 import { useProjectsStore } from '../store/projectsStore'
+import { useToastStore } from '../store/toastStore' // YENİ
+import { useSocketToast } from '../composables/useSocketToast' // YENİ
 import type { Project } from '../types/projects'
 import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import CreateProjectModal from '../components/CreateProjectModal.vue'
+import EditProjectModal from '../components/EditProjectModal.vue'
 import ProjectDetailsModal from '../components/ProjectDetailsModal.vue'
 import { useNotificationStore } from '../store/notificationStore'
+import { useSocket as socket } from '../composables/useSocket'
 
 // Store
 const projectStore = useProjectsStore()
-
+const toastStore = useToastStore() // YENİ
+const socketToast = useSocketToast() // YENİ
 // State
 const statusFilter = ref('')
 const stockFilter = ref('')
@@ -187,6 +196,9 @@ const searchText = ref('')
 const showCreateModal = ref(false)
 const showDetailsModal = ref(false)
 const selectedProject = ref<Project | null>(null)
+const editingProject = ref<Project | null>(null)
+const showEditModal = ref(false)
+const { connected } = useSocketToast()
 
 // Computed
 const filteredProjects = computed(() => {
@@ -210,7 +222,7 @@ const filteredProjects = computed(() => {
   // Search filter
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    projects = projects.filter((p: Project) => 
+    projects = projects.filter((p: Project) =>
       p.name.toLowerCase().includes(search) ||
       p.customer?.toLowerCase().includes(search) ||
       p.projectCode?.toLowerCase().includes(search)
@@ -241,23 +253,6 @@ const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-const saveProject = async (projectData: any) => {
-  try {
-    console.log('🚀 Projects.vue - saveProject çağrıldı');
-    console.log('📤 Gönderilecek proje data:', projectData);
-    
-    console.log('🔍 ProjectStore createProject çağrılıyor...');
-    await projectStore.createProject(projectData);
-    
-    console.log('✅ Proje başarıyla oluşturuldu');
-    closeCreateModal();
-    
-  } catch (error) {
-    console.error('❌ Projects.vue - Proje kayıt hatası:', error);
-    alert('Proje kaydedilirken hata oluştu: ' + (error instanceof Error ? error.message : String(error)));
-  }
-}
-
 const viewProjectDetails = (project: Project) => {
   selectedProject.value = project
   showDetailsModal.value = true
@@ -270,79 +265,92 @@ const closeDetailsModal = () => {
 
 const reserveMaterials = async (project: Project) => {
   try {
+    console.log('🔒 Rezervasyon başlatılıyor:', project.name)
     const result = await projectStore.reserveProjectMaterials(project._id!)
+
     if (result.success) {
-      useNotificationStore().addNotification({
-        type: 'success',
-        title: 'Başarılı',
-        message: result.message
-      })
-    } else {
-      throw new Error(result.error)
+      await projectStore.fetchProjects()
+      toastStore.success(`"${project.name}" projesi başarıyla rezerve edildi`, '🔒 Rezervasyon')
     }
-  } catch (error) {
-    useNotificationStore().addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: error instanceof Error ? error.message : 'Rezervasyon yapılamadı'
-    })
+  } catch (error: any) {
+    console.error('Rezervasyon hatası:', error)
+    toastStore.error(error.message || 'Rezervasyon hatası', '❌ Hata')
   }
 }
 
 const startProject = async (project: Project) => {
   try {
-    const result = await projectStore.updateProjectStatus(project._id!, 'active')
-    useNotificationStore().addNotification({
-      type: 'success',
-      title: 'Başarılı',
-      message: 'Proje başarıyla başlatıldı'
-    })
-  } catch (error) {
-    useNotificationStore().addNotification({
-      type: 'error',
-      title: 'Hata',
-      message: 'Proje başlatılamadı'
-    })
+    console.log('▶️ Proje başlatılıyor:', project.name)
+    await projectStore.updateProjectStatus(project._id!, 'active')
+    await projectStore.fetchProjects()
+
+    toastStore.success(`"${project.name}" projesi başarıyla başlatıldı`, '▶️ Başlatıldı')
+  } catch (error: any) {
+    console.error('Başlatma hatası:', error)
+    toastStore.error(error.message || 'Proje başlatma hatası', '❌ Hata')
   }
 }
 
 const completeProject = async (project: Project) => {
-  if (confirm(`"${project.name}" projesini tamamlamak istediğinizden emin misiniz?\n\nBu işlem malzemeleri stoktan düşecek!`)) {
-    try {
-      const projectId = project._id
-      if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
-        throw new Error('Geçersiz proje ID')
-      }
-      
-      await projectStore.completeProject(objectIdToString(projectId))
-      alert('Proje tamamlandı! Malzemeler stoktan düşüldü.')
-    } catch (error) {
-      console.error('Proje tamamlama hatası:', error)
-      alert('Proje tamamlanırken hata oluştu!')
-    }
+  try {
+    console.log('✅ Proje tamamlanıyor:', project.name)
+    await projectStore.completeProject(project._id!)
+    await projectStore.fetchProjects()
+
+    toastStore.success(`"${project.name}" projesi başarıyla tamamlandı`, '✅ Tamamlandı')
+  } catch (error: any) {
+    console.error('Tamamlama hatası:', error)
+    toastStore.error(error.message || 'Proje tamamlama hatası', '❌ Hata')
   }
 }
 
-const editProject = (project: Project) => {
-  // Edit modal açılacak
-  console.log('Edit project:', objectIdToString(project._id || ''))
+const saveProject = async (projectData: any) => {
+  try {
+    await projectStore.createProject(projectData)
+    closeCreateModal()
+    toastStore.success(`"${projectData.name}" projesi oluşturuldu`, '🏗️ Yeni Proje')
+  } catch (error: any) {
+    console.error('Proje kayıt hatası:', error)
+    toastStore.error(error.message || 'Proje kaydedilirken hata oluştu', '❌ Hata')
+  }
+}
+
+const updateProject = async (projectData: any) => {
+  try {
+    if (!editingProject.value?._id) return
+
+    await projectStore.updateProject(editingProject.value._id, projectData)
+    closeEditModal()
+
+    toastStore.success(`"${projectData.name}" projesi güncellendi`, '📝 Güncellendi')
+  } catch (error: any) {
+    console.error('Proje güncelleme hatası:', error)
+    toastStore.error(error.message || 'Proje güncellenirken hata oluştu', '❌ Hata')
+  }
 }
 
 const deleteProject = async (project: Project) => {
-  if (confirm(`"${project.name}" projesini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
-    try {
-      const projectId = project._id
-      if (!projectId || !isValidObjectId(objectIdToString(projectId))) {
-        throw new Error('Geçersiz proje ID')
-      }
-      
-      await projectStore.deleteProject(objectIdToString(projectId))
-      alert('Proje silindi!')
-    } catch (error) {
-      console.error('Proje silme hatası:', error)
-      alert('Proje silinirken hata oluştu!')
-    }
+  if (!confirm(`"${project.name}" projesini silmek istediğinizden emin misiniz?`)) {
+    return
   }
+
+  try {
+    await projectStore.deleteProject(project._id!)
+    toastStore.success(`"${project.name}" projesi silindi`, '🗑️ Silindi')
+  } catch (error: any) {
+    console.error('Silme hatası:', error)
+    toastStore.error(error.message || 'Proje silme hatası', '❌ Hata')
+  }
+}
+const editProject = (project: Project) => {
+  console.log('✏️ Proje düzenleniyor:', project.name)
+  editingProject.value = project
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  editingProject.value = null
 }
 
 const exportProjects = () => {
@@ -354,7 +362,7 @@ const exportProjects = () => {
 const getStatusClass = (status: string) => {
   const classes = {
     'planning': 'status-planning',
-    'reserved': 'status-reserved', 
+    'reserved': 'status-reserved',
     'active': 'status-active',
     'completed': 'status-completed',
     'cancelled': 'status-cancelled'
@@ -367,7 +375,7 @@ const getStatusLabel = (status: string) => {
     'planning': 'Planlama',
     'reserved': 'Rezerve',
     'active': 'Aktif',
-    'completed': 'Tamamlandı', 
+    'completed': 'Tamamlandı',
     'cancelled': 'İptal'
   }
   return labels[status as keyof typeof labels] || status

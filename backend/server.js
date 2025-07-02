@@ -2,6 +2,8 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const http = require('http')
+const socketIO = require('socket.io')
 const cors = require('cors');
 
 // Model çakışmalarını önlemek için mongoose cache'i temizle
@@ -9,7 +11,6 @@ mongoose.models = {};
 mongoose.modelSchemas = {};
 
 const app = express();
-
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -17,6 +18,24 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+const server = http.createServer(app)
+
+const io = socketIO(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+})
+
+io.on('connection', socket => {
+  console.log('🟢 Yeni Socket bağlantısı:', socket.id)
+
+  socket.on('disconnect', () => {
+    console.log('🔴 Socket bağlantısı koptu:', socket.id)
+  })
+})
+
 
 // Routes import etmeden önce modelleri temizle
 const clearModels = () => {
@@ -137,5 +156,7 @@ mongoose.connect(MONGO_URI)
     console.error("❌ MongoDB bağlantı hatası:", err);
     process.exit(1);
   });
+
+app.set('io', io)
 
 module.exports = app;

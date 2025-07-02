@@ -49,8 +49,18 @@ class ProjectsService extends BaseApiService<Project> {
     return response.data
   }
 
+  async complete(projectId: string): Promise<ApiResponse<Project>> {
+    const response = await this.api.post<ApiResponse<Project>>(`${this.basePath}/${projectId}/complete`)
+    return response.data
+  }
+
+  async reserveMaterials(projectId: string): Promise<ApiResponse<Project>> {
+    const response = await this.api.post<ApiResponse<Project>>(`${this.basePath}/${projectId}/reserve`)
+    return response.data
+  }
+
   async checkMaterialStock(materialId: string, materialType: string, quantity: number) {
-    //console.log('🔍 Frontend - checkMaterialStock çağrıldı')
+
     // ID temizleme
     const cleanId = String(materialId).trim().replace(/[^0-9a-fA-F]/g, '')
     
@@ -64,36 +74,11 @@ class ProjectsService extends BaseApiService<Project> {
       materialType: String(materialType).trim(),
       quantity: Number(quantity)
     }
-    
-    // console.log('📤 Temizlenmiş parametreler:', cleanParams)
-    // console.log('🔗 Request URL:', `${this.api.defaults.baseURL}${this.basePath}/check-stock`)
-    // console.log('🔗 Full request details:', {
-    //   method: 'GET',
-    //   url: `${this.basePath}/check-stock`,
-    //   params: cleanParams
-    // })
 
     try {
-      //console.log('📡 API isteği gönderiliyor...')
-      
       const response = await this.api.get(`${this.basePath}/check-stock`, {
         params: cleanParams
       })
-      
-      console.log('✅ API isteği tamamlandı')
-      // console.log('📥 Response status:', response.status)
-      // console.log('📥 Response headers:', response.headers)
-      // console.log('📥 Response data:', response.data)
-      
-      // Data structure kontrolü
-      // if (response.data && response.data.data) {
-      //   console.log('✅ Response.data.available:', response.data.data.available)
-      //   console.log('✅ Response.data.found:', response.data.data.found)
-      //   console.log('✅ Response.data.availableStock:', response.data.data.availableStock)
-      // } else {
-      //   console.log('⚠️ Beklenmeyen response structure:', response.data)
-      // }
-      
       return response.data
       
     } catch (error: any) {

@@ -683,19 +683,27 @@ router.post('/:id/reserve', validateObjectId, async (req, res) => {
 // POST: Proje başlat
 router.post('/:id/start', validateObjectId, async (req, res) => {
   try {
-    // console.log('▶️ Proje başlatılıyor:', req.params.id);
-    
     const project = await Project.findById(req.params.id);
     if (!project) {
-      return res.status(404).json({ error: 'Proje bulunamadı' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Proje bulunamadı' 
+      });
     }
 
     if (project.status !== 'reserved') {
-      return res.status(400).json({ error: 'Sadece rezerve edilmiş projeler başlatılabilir' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Sadece rezerve edilmiş projeler başlatılabilir' 
+      });
     }
 
     project.status = 'active';
     project.startDate = new Date();
+    
+    if (!project.reservationHistory) {
+      project.reservationHistory = [];
+    }
     
     project.reservationHistory.push({
       action: 'started',
@@ -712,26 +720,36 @@ router.post('/:id/start', validateObjectId, async (req, res) => {
       detay: { name: project.name }
     });
 
-    res.json(project);
+    res.json({
+      success: true,
+      data: project,
+      message: 'Proje başarıyla başlatıldı'
+    });
 
   } catch (err) {
     console.error('❌ Proje başlatma hatası:', err);
-    res.status(500).json({ error: 'Başlatma başarısız', details: err.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Başlatma başarısız', 
+      details: err.message 
+    });
   }
 });
-
-// POST: Proje tamamla
 router.post('/:id/complete', validateObjectId, async (req, res) => {
   try {
-    // console.log('✅ Proje tamamlanıyor:', req.params.id);
-    
     const project = await Project.findById(req.params.id);
     if (!project) {
-      return res.status(404).json({ error: 'Proje bulunamadı' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Proje bulunamadı' 
+      });
     }
 
     if (project.status !== 'active') {
-      return res.status(400).json({ error: 'Sadece aktif projeler tamamlanabilir' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Sadece aktif projeler tamamlanabilir' 
+      });
     }
 
     // Malzemeleri stoktan düş
@@ -739,17 +757,21 @@ router.post('/:id/complete', validateObjectId, async (req, res) => {
       await updateMaterialStock(
         material.materialId,
         material.materialType,
-        material.reservedQuantity,
+        material.reservedQuantity || material.requestedQuantity,
         'consume'
       );
       
       // Proje materyalini güncelle
-      material.usedQuantity = material.reservedQuantity;
+      material.usedQuantity = material.reservedQuantity || material.requestedQuantity;
       material.reservationStatus = 'consumed';
     }
 
     project.status = 'completed';
     project.endDate = new Date();
+    
+    if (!project.reservationHistory) {
+      project.reservationHistory = [];
+    }
     
     project.reservationHistory.push({
       action: 'completed',
@@ -766,11 +788,19 @@ router.post('/:id/complete', validateObjectId, async (req, res) => {
       detay: { name: project.name }
     });
 
-    res.json(project);
+    res.json({
+      success: true,
+      data: project,
+      message: 'Proje başarıyla tamamlandı'
+    });
 
   } catch (err) {
     console.error('❌ Proje tamamlama hatası:', err);
-    res.status(500).json({ error: 'Tamamlama başarısız', details: err.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Tamamlama başarısız', 
+      details: err.message 
+    });
   }
 });
 

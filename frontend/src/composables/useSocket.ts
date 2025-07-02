@@ -1,7 +1,7 @@
 // frontend/src/composables/useSocket.ts - TypeScript versiyonu
 
 import { ref, onMounted, onUnmounted, Ref } from 'vue'
-import { io, Socket } from 'socket.io-client'
+import io, { Socket } from 'socket.io-client'
 
 interface Notification {
   id: number
@@ -26,7 +26,7 @@ interface StockUpdateData {
 }
 
 export function useSocket() {
-  const socket: Ref<Socket | null> = ref(null)
+  const socket: Ref<typeof Socket | null> = ref(null)
   const connected = ref(false)
   const notifications: Ref<Notification[]> = ref([])
 
