@@ -29,19 +29,24 @@ const validateObjectId = (req, res, next) => {
   next();
 };
 
-router.use('/:id', validateObjectId);
-
-
 // Malzeme stok kontrolü - ObjectId ile (DEBUG VERSİYONU)
 async function checkMaterialStock(materialId, materialType, requestedQuantity) {
   try {
-    console.log('🔍 checkMaterialStock fonksiyonu başlatıldı');
+    console.log('🔍 checkMaterialStock başlatıldı');
     console.log('📋 Parametreler:', { materialId, materialType, requestedQuantity });
     
     const Model = getModelByType(materialType);
     if (!Model) {
       console.error('❌ Geçersiz malzeme türü:', materialType);
-      throw new Error(`Geçersiz malzeme türü: ${materialType}`);
+      const result = {
+        found: false,
+        available: false,
+        availableStock: 0,
+        material: null,
+        error: `Geçersiz malzeme türü: ${materialType}`
+      };
+      console.log('📤 checkMaterialStock sonucu (hata):', result);
+      return result;
     }
     
     console.log('✅ Model bulundu:', Model.modelName);
@@ -49,16 +54,17 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
     const material = await Model.findById(materialId);
     if (!material) {
       console.log('❌ Malzeme bulunamadı, ID:', materialId);
-      return {
+      const result = {
         found: false,
         available: false,
         availableStock: 0,
         material: null
       };
+      console.log('📤 checkMaterialStock sonucu (bulunamadı):', result);
+      return result;
     }
     
     console.log('✅ Malzeme bulundu:', material.malzeme || material.name || 'İsimsiz');
-    console.log('📦 Malzeme verisi:', JSON.stringify(material, null, 2));
     
     // Stok miktarını materialType'a göre al
     let availableStock = 0;
@@ -95,19 +101,20 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       }
     };
     
-    console.log('📤 checkMaterialStock sonucu:', result);
+    console.log('📤 checkMaterialStock BAŞARILI sonucu:', result);
     return result;
     
   } catch (error) {
     console.error(`❌ checkMaterialStock hatası:`, error);
-    console.error('❌ Error stack:', error.stack);
-    return {
+    const result = {
       found: false,
       available: false,
       availableStock: 0,
       material: null,
       error: error.message
     };
+    console.log('📤 checkMaterialStock sonucu (exception):', result);
+    return result;
   }
 }
 
@@ -213,13 +220,22 @@ async function validateProjectMaterials(materials) {
 
 // ===== ROUTES =====
 
-// GET: Malzeme stok kontrolü - Frontend için endpoint
+router.get('/test-route', (req, res) => {
+  console.log('🧪 Test route çağrıldı!');
+  res.json({ message: 'Test route çalışıyor!', timestamp: new Date().toISOString() });
+});
+
+// Gerçek check-stock route'u
 router.get('/check-stock', async (req, res) => {
   try {
+    console.log('🔍 Check-stock route çağrıldı!');
+    console.log('📥 Query params:', req.query);
+    
     const { materialId, materialType, quantity } = req.query;
     
     // Parameter validation
     if (!materialId) {
+      console.log('❌ materialId eksik');
       return res.status(400).json({
         success: false,
         error: 'materialId parametresi gerekli'
@@ -227,6 +243,7 @@ router.get('/check-stock', async (req, res) => {
     }
     
     if (!materialType) {
+      console.log('❌ materialType eksik');
       return res.status(400).json({
         success: false,
         error: 'materialType parametresi gerekli'
@@ -234,6 +251,7 @@ router.get('/check-stock', async (req, res) => {
     }
     
     if (!quantity || isNaN(Number(quantity))) {
+      console.log('❌ quantity geçersiz:', quantity);
       return res.status(400).json({
         success: false,
         error: 'Geçerli quantity parametresi gerekli'
@@ -242,12 +260,15 @@ router.get('/check-stock', async (req, res) => {
 
     // ObjectId validation
     if (!mongoose.Types.ObjectId.isValid(materialId)) {
+      console.log('❌ Geçersiz ObjectId:', materialId);
       return res.status(400).json({
         success: false,
-        error: 'Geçersiz materialId formatı'
+        error: 'Geçersiz ObjectId formatı'
       });
     }
 
+    console.log('✅ Parametreler geçerli, stok kontrolü başlatılıyor...');
+    
     // Stock check
     const stockCheck = await checkMaterialStock(
       materialId, 
@@ -255,8 +276,7 @@ router.get('/check-stock', async (req, res) => {
       Number(quantity)
     );
     
-    console.log(`🔍 Stok kontrolü: ${materialType}/${materialId} - Miktar: ${quantity}`);
-    console.log(`📊 Sonuç: Bulunan: ${stockCheck.found}, Yeterli: ${stockCheck.available}, Mevcut: ${stockCheck.availableStock}`);
+    console.log('📤 Stok kontrol sonucu:', stockCheck);
     
     res.json({
       success: true,
@@ -264,7 +284,7 @@ router.get('/check-stock', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ Stok kontrol hatası:', err);
+    console.error('❌ Check-stock hatası:', err);
     res.status(500).json({
       success: false,
       error: 'Stok kontrolü başarısız',
@@ -273,30 +293,7 @@ router.get('/check-stock', async (req, res) => {
   }
 });
 
-// GET: Tüm projeler - populate ile malzemeleri getir
-router.get('/', async (req, res) => {
-  try {
-    const { status, search, page = 1, limit = 10 } = req.query;
-    
-    let query = {};
-    if (status) query.status = status;
-    if (search) query.$text = { $search: search };
-
-    const projects = await Project.find(query)
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .populate('materials.materialId'); // ObjectId referanslarını doldur
-
-    console.log(`📤 ${projects.length} proje gönderildi`);
-    res.json(projects);
-  } catch (err) {
-    console.error('❌ Proje listesi hatası:', err);
-    res.status(500).json({ error: 'Sunucu hatası', details: err.message });
-  }
-});
-
-// GET: İstatistikler
+// GET: Proje istatistikleri
 router.get('/statistics', async (req, res) => {
   try {
     const totalProjects = await Project.countDocuments();
@@ -328,8 +325,96 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
+// GET: Tüm projeler - populate ile malzemeleri getir
+router.get('/', async (req, res) => {
+  try {
+    const { status, search, page = 1, limit = 10 } = req.query;
+    
+    let query = {};
+    if (status) query.status = status;
+    if (search) query.$text = { $search: search };
+
+    const projects = await Project.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate('materials.materialId'); // ObjectId referanslarını doldur
+
+    console.log(`📤 ${projects.length} proje gönderildi`);
+    res.json(projects);
+  } catch (err) {
+    console.error('❌ Proje listesi hatası:', err);
+    res.status(500).json({ error: 'Sunucu hatası', details: err.message });
+  }
+});
+router.post('/', async (req, res) => {
+  try {
+    console.log('🚀 POST / route çağrıldı!');
+    console.log('📥 req.body:', JSON.stringify(req.body, null, 2));
+    console.log('📋 Proje adı:', req.body.name);
+    console.log('📦 Malzeme sayısı:', req.body.materials?.length || 0);
+    
+    // Materials array'indeki materialId'leri ObjectId'ye çevir
+    if (req.body.materials && Array.isArray(req.body.materials)) {
+      req.body.materials = req.body.materials.map(material => ({
+        ...material,
+        materialId: mongoose.Types.ObjectId.isValid(material.materialId) 
+          ? new mongoose.Types.ObjectId(material.materialId)
+          : material.materialId
+      }));
+    }
+    
+    const newProject = new Project(req.body);
+    const savedProject = await newProject.save();
+
+    // Log kaydet
+    await Log.create({
+      bolum: 'Project',
+      islem: 'ekle',
+      dokumanId: savedProject._id,
+      detay: { name: savedProject.name, status: savedProject.status }
+    });
+
+    // Socket.io güvenli kullanım
+    try {
+      if (socketManager && socketManager.getIO) {
+        const io = socketManager.getIO();
+        if (io) {
+          io.emit('log', {
+            bolum: 'Project',
+            islem: 'ekle',
+            detay: savedProject
+          });
+          console.log('✅ Socket event gönderildi');
+        } else {
+          console.log('⚠️ Socket.io mevcut değil, log sadece DB\'ye kaydedildi');
+        }
+      } else {
+        console.log('⚠️ SocketManager mevcut değil, log sadece DB\'ye kaydedildi');
+      }
+    } catch (socketError) {
+      console.error('⚠️ Socket.io hatası (göz ardı edildi):', socketError);
+    }
+
+    console.log('✅ Proje oluşturuldu:', savedProject._id);
+    res.status(201).json({
+      success: true,
+      data: savedProject,
+      message: 'Proje başarıyla oluşturuldu'
+    });
+
+  } catch (err) {
+    console.error('❌ POST route hatası:', err);
+    res.status(400).json({ 
+      success: false,
+      error: 'Proje oluşturulamadı', 
+      details: err.message 
+    });
+  }
+});
+
 // GET: Tek proje - populate ile malzemeleri getir
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateObjectId, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     
@@ -374,52 +459,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST: Yeni proje oluştur - ObjectId referansları ile
-router.post('/', async (req, res) => {
-  try {
-    console.log('➕ Yeni proje oluşturuluyor:', req.body.name);
-    
-    // Materials array'indeki materialId'leri ObjectId'ye çevir
-    if (req.body.materials && Array.isArray(req.body.materials)) {
-      req.body.materials = req.body.materials.map(material => ({
-        ...material,
-        materialId: mongoose.Types.ObjectId.isValid(material.materialId) 
-          ? new mongoose.Types.ObjectId(material.materialId)
-          : material.materialId
-      }));
-    }
-    
-    const newProject = new Project(req.body);
-    const savedProject = await newProject.save();
-
-    await Log.create({
-      bolum: 'Project',
-      islem: 'ekle',
-      dokumanId: savedProject._id,
-      detay: { name: savedProject.name, status: savedProject.status }
-    });
-
-    socketManager.getIO().emit('log', {
-      bolum: 'Project',
-      islem: 'ekle',
-      detay: savedProject
-    });
-
-    console.log('✅ Proje oluşturuldu:', savedProject._id);
-    res.status(201).json(savedProject);
-
-  } catch (err) {
-    console.error('❌ Proje oluşturma hatası:', err);
-    res.status(400).json({ 
-      success: false,
-      error: 'Proje oluşturulamadı', 
-      details: err.message 
-    });
-  }
-});
-
 // PUT: Proje güncelle
-router.put('/:id', async (req, res) => {
+router.put('/:id', validateObjectId, async (req, res) => {
   try {
     console.log('✏️ Proje güncelleniyor:', req.params.id);
     
@@ -476,8 +517,67 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// DELETE: Proje sil
+router.delete('/:id', validateObjectId, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Proje bulunamadı' 
+      });
+    }
+
+    // Aktif projeleri silmeyi engelle
+    if (project.status === 'active') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Aktif projeler silinemez' 
+      });
+    }
+
+    // Rezerve edilmiş malzemelerin rezervasyonunu iptal et
+    if (project.status === 'reserved') {
+      for (const material of project.materials) {
+        if (material.reservationStatus === 'reserved') {
+          await updateMaterialStock(
+            material.materialId,
+            material.materialType,
+            material.reservedQuantity,
+            'unreserve'
+          );
+        }
+      }
+    }
+
+    await Project.findByIdAndDelete(req.params.id);
+
+    // Log kaydet
+    await Log.create({
+      bolum: 'Project',
+      islem: 'sil',
+      dokumanId: req.params.id,
+      detay: { name: project.name }
+    });
+
+    res.json({ 
+      success: true,
+      message: 'Proje silindi', 
+      id: req.params.id 
+    });
+
+  } catch (err) {
+    console.error('❌ Proje silme hatası:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Silme başarısız', 
+      details: err.message 
+    });
+  }
+});
+
 // POST: Malzeme rezerve et - ObjectId ile
-router.post('/:id/reserve', async (req, res) => {
+router.post('/:id/reserve', validateObjectId, async (req, res) => {
   try {
     console.log('📦 Proje malzemeleri rezerve ediliyor:', req.params.id);
     
@@ -581,7 +681,7 @@ router.post('/:id/reserve', async (req, res) => {
 });
 
 // POST: Proje başlat
-router.post('/:id/start', async (req, res) => {
+router.post('/:id/start', validateObjectId, async (req, res) => {
   try {
     console.log('▶️ Proje başlatılıyor:', req.params.id);
     
@@ -621,7 +721,7 @@ router.post('/:id/start', async (req, res) => {
 });
 
 // POST: Proje tamamla
-router.post('/:id/complete', async (req, res) => {
+router.post('/:id/complete', validateObjectId, async (req, res) => {
   try {
     console.log('✅ Proje tamamlanıyor:', req.params.id);
     
@@ -675,7 +775,7 @@ router.post('/:id/complete', async (req, res) => {
 });
 
 // POST: Malzeme ekle - ObjectId ile
-router.post('/:id/materials', async (req, res) => {
+router.post('/:id/materials', validateObjectId, async (req, res) => {
   try {
     const { materialId, materialType, requestedQuantity, notes } = req.body;
     
@@ -758,7 +858,7 @@ router.post('/:id/materials', async (req, res) => {
 });
 
 // DELETE: Malzeme çıkar
-router.delete('/:id/materials/:materialIndex', async (req, res) => {
+router.delete('/:id/materials/:materialIndex', validateObjectId, async (req, res) => {
   try {
     const { id, materialIndex } = req.params;
     
@@ -810,65 +910,6 @@ router.delete('/:id/materials/:materialIndex', async (req, res) => {
   } catch (err) {
     console.error('❌ Malzeme çıkarma hatası:', err);
     res.status(500).json({ error: 'Malzeme çıkarılamadı', details: err.message });
-  }
-});
-
-// DELETE: Proje sil
-router.delete('/:id', async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id);
-    if (!project) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Proje bulunamadı' 
-      });
-    }
-
-    // Aktif projeleri silmeyi engelle
-    if (project.status === 'active') {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Aktif projeler silinemez' 
-      });
-    }
-
-    // Rezerve edilmiş malzemelerin rezervasyonunu iptal et
-    if (project.status === 'reserved') {
-      for (const material of project.materials) {
-        if (material.reservationStatus === 'reserved') {
-          await updateMaterialStock(
-            material.materialId,
-            material.materialType,
-            material.reservedQuantity,
-            'unreserve'
-          );
-        }
-      }
-    }
-
-    await Project.findByIdAndDelete(req.params.id);
-
-    // Log kaydet
-    await Log.create({
-      bolum: 'Project',
-      islem: 'sil',
-      dokumanId: req.params.id,
-      detay: { name: project.name }
-    });
-
-    res.json({ 
-      success: true,
-      message: 'Proje silindi', 
-      id: req.params.id 
-    });
-
-  } catch (err) {
-    console.error('❌ Proje silme hatası:', err);
-    res.status(500).json({ 
-      success: false,
-      error: 'Silme başarısız', 
-      details: err.message 
-    });
   }
 });
 

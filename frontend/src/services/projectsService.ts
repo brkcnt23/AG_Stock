@@ -1,3 +1,5 @@
+// frontend/src/services/projectsService.ts - Düzeltilmiş versiyon
+
 import { BaseApiService } from './baseApiService'
 import type { Project, ProjectOperationResult } from '../types/projects'
 import type { ApiResponse } from '../types/api'
@@ -18,8 +20,21 @@ class ProjectsService extends BaseApiService<Project> {
   }
 
   async create(data: Partial<Project>): Promise<ApiResponse<Project>> {
-    const response = await this.api.post<ApiResponse<Project>>(this.basePath, data)
-    return response.data
+    console.log('🌐 ProjectsService - create çağrıldı')
+    console.log('📤 API\'ye gönderilecek data:', data)
+    console.log('🔗 API endpoint:', this.basePath)
+    console.log('🔗 Full URL:', this.api.defaults.baseURL + this.basePath)
+    
+    try {
+      const response = await this.api.post<ApiResponse<Project>>(this.basePath, data)
+      console.log('✅ API yanıtı alındı:', response.data)
+      return response.data
+    } catch (error: any) {
+      console.error('❌ ProjectsService - create hatası:', error)
+      console.error('❌ Error response:', error.response?.data)
+      console.error('❌ Error status:', error.response?.status)
+      throw error
+    }
   }
 
   async update(id: string, data: Partial<Project>): Promise<ApiResponse<Project>> {
@@ -29,7 +44,6 @@ class ProjectsService extends BaseApiService<Project> {
 
   async delete(id: string): Promise<ApiResponse<null>> {
     const response = await this.api.delete<ApiResponse<null>>(`${this.basePath}/${id}`)
-    // Ensure the data property is null to match the expected type
     return { ...response.data, data: null }
   }
 
@@ -39,43 +53,77 @@ class ProjectsService extends BaseApiService<Project> {
   }
 
   async checkMaterialStock(materialId: string, materialType: string, quantity: number) {
-    console.log('🔍 Frontend - checkMaterialStock çağrıldı');
-    console.log('📤 Gönderilen parametreler:', { materialId, materialType, quantity });
-
-    // Parametreleri kontrol et
-    if (!materialId) {
-      console.error('❌ materialId boş!');
-      throw new Error('materialId gerekli');
+    console.log('🔍 Frontend - checkMaterialStock çağrıldı')
+    console.log('📤 RAW parametreler:', { materialId, materialType, quantity })
+    
+    // ID temizleme
+    const cleanId = String(materialId).trim().replace(/[^0-9a-fA-F]/g, '')
+    console.log('🧹 Temizlenmiş ID:', cleanId)
+    console.log('🔍 ID uzunluğu:', cleanId.length)
+    console.log('🔍 Hex kontrolü:', /^[0-9a-fA-F]{24}$/.test(cleanId))
+    
+    if (!cleanId || cleanId.length !== 24) {
+      console.error('❌ Geçersiz ID formatı:', { original: materialId, cleaned: cleanId })
+      throw new Error('Geçersiz material ID formatı')
     }
-
-    if (!materialType) {
-      console.error('❌ materialType boş!');
-      throw new Error('materialType gerekli');
+    
+    const cleanParams = {
+      materialId: cleanId,
+      materialType: String(materialType).trim(),
+      quantity: Number(quantity)
     }
-
-    if (!quantity || quantity <= 0) {
-      console.error('❌ quantity geçersiz:', quantity);
-      throw new Error('quantity geçerli bir sayı olmalı');
-    }
+    
+    console.log('📤 Temizlenmiş parametreler:', cleanParams)
+    console.log('🔗 Request URL:', `${this.api.defaults.baseURL}${this.basePath}/check-stock`)
+    console.log('🔗 Full request details:', {
+      method: 'GET',
+      url: `${this.basePath}/check-stock`,
+      params: cleanParams
+    })
 
     try {
+      console.log('📡 API isteği gönderiliyor...')
+      
       const response = await this.api.get(`${this.basePath}/check-stock`, {
-        params: { materialId, materialType, quantity }
-      });
-
-      console.log('✅ Stok kontrolü başarılı:', response.data);
-      return response.data;
-
-    } catch (error) {
-      console.error('❌ Stok kontrolü hatası:', error);
-      if (typeof error === 'object' && error !== null && 'response' in error) {
-        // @ts-expect-error: We are narrowing error to have response
-        console.error('❌ Error response:', error.response?.data);
-        // @ts-expect-error: We are narrowing error to have response
-        console.error('❌ Error status:', error.response?.status);
+        params: cleanParams
+      })
+      
+      console.log('✅ API isteği tamamlandı')
+      console.log('📥 Response status:', response.status)
+      console.log('📥 Response headers:', response.headers)
+      console.log('📥 Response data:', response.data)
+      
+      // Data structure kontrolü
+      if (response.data && response.data.data) {
+        console.log('✅ Response.data.available:', response.data.data.available)
+        console.log('✅ Response.data.found:', response.data.data.found)
+        console.log('✅ Response.data.availableStock:', response.data.data.availableStock)
+      } else {
+        console.log('⚠️ Beklenmeyen response structure:', response.data)
       }
-      throw error;
+      
+      return response.data
+      
+    } catch (error: any) {
+      console.error('❌ API isteği hatası:', error)
+      
+      if (error.response) {
+        console.error('❌ Response Error:')
+        console.error('   Status:', error.response.status)
+        console.error('   Data:', error.response.data)
+        console.error('   Headers:', error.response.headers)
+      } else if (error.request) {
+        console.error('❌ Request Error (no response):')
+        console.error('   Request:', error.request)
+        console.error('   Likely network or CORS issue')
+      } else {
+        console.error('❌ General Error:')
+        console.error('   Message:', error.message)
+      }
+      
+      throw error
     }
   }
 }
-  export const projectsService = new ProjectsService()
+
+export const projectsService = new ProjectsService()

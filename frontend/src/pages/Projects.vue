@@ -243,11 +243,18 @@ const closeCreateModal = () => {
 
 const saveProject = async (projectData: any) => {
   try {
-    await projectStore.createProject(projectData)
-    closeCreateModal()
+    console.log('🚀 Projects.vue - saveProject çağrıldı');
+    console.log('📤 Gönderilecek proje data:', projectData);
+    
+    console.log('🔍 ProjectStore createProject çağrılıyor...');
+    await projectStore.createProject(projectData);
+    
+    console.log('✅ Proje başarıyla oluşturuldu');
+    closeCreateModal();
+    
   } catch (error) {
-    console.error('Proje kayıt hatası:', error)
-    alert('Proje kaydedilirken hata oluştu!')
+    console.error('❌ Projects.vue - Proje kayıt hatası:', error);
+    alert('Proje kaydedilirken hata oluştu: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
 
