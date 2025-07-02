@@ -43,23 +43,25 @@ export const useProjectsStore = defineStore('projects', () => {
   // Add validation helper
   const validateProject = async (project: Project): Promise<ProjectValidationResult> => {
   console.log('🔍 validateProject başlatıldı');
-  console.log('📋 Validasyon edilecek proje:', project);
+  // console.log('📋 Validasyon edilecek proje:', project);
   
   const errors: string[] = []
 
   if (!project.name?.trim()) {
     console.log('❌ Proje adı eksik');
     errors.push('Proje adı gerekli')
-  } else {
-    console.log('✅ Proje adı: OK');
-  }
+  } 
+  // else {
+  //   console.log('✅ Proje adı: OK');
+  // }
 
   if (!project.materials?.length) {
     console.log('❌ Malzeme listesi eksik');
     errors.push('En az bir malzeme eklenmeli')
-  } else {
-    console.log('✅ Malzeme sayısı:', project.materials.length);
-  }
+  } 
+  // else {
+  //   console.log('✅ Malzeme sayısı:', project.materials.length);
+  // }
 
   // Check material stocks
   const insufficientMaterials = []
@@ -69,7 +71,7 @@ export const useProjectsStore = defineStore('projects', () => {
     const material = project.materials![i];
     
     try {
-      console.log(`📦 Kontrol ediliyor [${i}]:`, material.materialId, material.materialType, material.requestedQuantity);
+      //console.log(`📦 Kontrol ediliyor [${i}]:`, material.materialId, material.materialType, material.requestedQuantity);
       
       // Null/undefined kontrol
       if (!material.materialId || !material.materialType || !material.requestedQuantity) {
@@ -82,7 +84,7 @@ export const useProjectsStore = defineStore('projects', () => {
         continue;
       }
       
-      console.log(`🔍 API çağrısı yapılıyor [${i}]...`);
+      //console.log(`🔍 API çağrısı yapılıyor [${i}]...`);
       
       const stockCheck = await projectsService.checkMaterialStock(
         material.materialId,
@@ -90,7 +92,7 @@ export const useProjectsStore = defineStore('projects', () => {
         material.requestedQuantity
       );
       
-      console.log(`📊 Stok kontrol sonucu [${i}]:`, stockCheck);
+      //console.log(`📊 Stok kontrol sonucu [${i}]:`, stockCheck);
       
       // Response structure kontrol
       if (!stockCheck || !stockCheck.data) {
@@ -115,9 +117,10 @@ export const useProjectsStore = defineStore('projects', () => {
           requested: material.requestedQuantity,
           available: availableStock || 0
         });
-      } else {
-        console.log(`✅ Stok yeterli [${i}]:`, material.materialId);
-      }
+      } 
+      // else {
+      //   console.log(`✅ Stok yeterli [${i}]:`, material.materialId);
+      // }
     } catch (err) {
       console.error(`❌ Stok kontrolü hatası [${i}]:`, material.materialId, err);
       errors.push(
@@ -128,9 +131,9 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  console.log('🔍 Validasyon özeti:');
-  console.log('   - Errors:', errors);
-  console.log('   - Insufficient materials:', insufficientMaterials);
+  // console.log('🔍 Validasyon özeti:');
+  // console.log('   - Errors:', errors);
+  // console.log('   - Insufficient materials:', insufficientMaterials);
 
   const result = {
     isValid: errors.length === 0 && insufficientMaterials.length === 0,
@@ -138,7 +141,7 @@ export const useProjectsStore = defineStore('projects', () => {
     insufficientMaterials: insufficientMaterials.length ? insufficientMaterials : undefined
   };
 
-  console.log('📋 Final validasyon sonucu:', result);
+  // console.log('📋 Final validasyon sonucu:', result);
   return result;
 }
 
@@ -178,23 +181,23 @@ export const useProjectsStore = defineStore('projects', () => {
   const createProject = async (projectData: Partial<Project>) => {
   try {
     console.log('🏪 ProjectsStore - createProject başlatıldı');
-    console.log('📥 Gelen projectData:', projectData);
+    // console.log('📥 Gelen projectData:', projectData);
     
     loading.value = true;
     error.value = null;
 
     // Validate first
-    console.log('🔍 Proje validasyonu başlatılıyor...');
+    // console.log('🔍 Proje validasyonu başlatılıyor...');
     const validation = await validateProject(projectData as Project);
-    console.log('📊 Validasyon sonucu:', validation);
+    // console.log('📊 Validasyon sonucu:', validation);
     
     if (!validation.isValid) {
       console.log('❌ Validasyon başarısız:', validation.errors);
       throw new Error(validation.errors.join(', '));
     }
 
-    console.log('✅ Validasyon başarılı, API çağrısı yapılıyor...');
-    console.log('📤 API\'ye gönderilecek data:', projectData);
+    // console.log('✅ Validasyon başarılı, API çağrısı yapılıyor...');
+    // console.log('📤 API\'ye gönderilecek data:', projectData);
     
     const response = await projectsService.create(projectData);
     console.log('📥 API yanıtı:', response);

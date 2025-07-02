@@ -20,9 +20,6 @@ class ProjectsService extends BaseApiService<Project> {
   }
 
   async create(data: Partial<Project>): Promise<ApiResponse<Project>> {
-    console.log('🌐 ProjectsService - create çağrıldı')
-    console.log('📤 API\'ye gönderilecek data:', data)
-    console.log('🔗 API endpoint:', this.basePath)
     console.log('🔗 Full URL:', this.api.defaults.baseURL + this.basePath)
     
     try {
@@ -53,14 +50,9 @@ class ProjectsService extends BaseApiService<Project> {
   }
 
   async checkMaterialStock(materialId: string, materialType: string, quantity: number) {
-    console.log('🔍 Frontend - checkMaterialStock çağrıldı')
-    console.log('📤 RAW parametreler:', { materialId, materialType, quantity })
-    
+    //console.log('🔍 Frontend - checkMaterialStock çağrıldı')
     // ID temizleme
     const cleanId = String(materialId).trim().replace(/[^0-9a-fA-F]/g, '')
-    console.log('🧹 Temizlenmiş ID:', cleanId)
-    console.log('🔍 ID uzunluğu:', cleanId.length)
-    console.log('🔍 Hex kontrolü:', /^[0-9a-fA-F]{24}$/.test(cleanId))
     
     if (!cleanId || cleanId.length !== 24) {
       console.error('❌ Geçersiz ID formatı:', { original: materialId, cleaned: cleanId })
@@ -73,34 +65,34 @@ class ProjectsService extends BaseApiService<Project> {
       quantity: Number(quantity)
     }
     
-    console.log('📤 Temizlenmiş parametreler:', cleanParams)
-    console.log('🔗 Request URL:', `${this.api.defaults.baseURL}${this.basePath}/check-stock`)
-    console.log('🔗 Full request details:', {
-      method: 'GET',
-      url: `${this.basePath}/check-stock`,
-      params: cleanParams
-    })
+    // console.log('📤 Temizlenmiş parametreler:', cleanParams)
+    // console.log('🔗 Request URL:', `${this.api.defaults.baseURL}${this.basePath}/check-stock`)
+    // console.log('🔗 Full request details:', {
+    //   method: 'GET',
+    //   url: `${this.basePath}/check-stock`,
+    //   params: cleanParams
+    // })
 
     try {
-      console.log('📡 API isteği gönderiliyor...')
+      //console.log('📡 API isteği gönderiliyor...')
       
       const response = await this.api.get(`${this.basePath}/check-stock`, {
         params: cleanParams
       })
       
       console.log('✅ API isteği tamamlandı')
-      console.log('📥 Response status:', response.status)
-      console.log('📥 Response headers:', response.headers)
-      console.log('📥 Response data:', response.data)
+      // console.log('📥 Response status:', response.status)
+      // console.log('📥 Response headers:', response.headers)
+      // console.log('📥 Response data:', response.data)
       
       // Data structure kontrolü
-      if (response.data && response.data.data) {
-        console.log('✅ Response.data.available:', response.data.data.available)
-        console.log('✅ Response.data.found:', response.data.data.found)
-        console.log('✅ Response.data.availableStock:', response.data.data.availableStock)
-      } else {
-        console.log('⚠️ Beklenmeyen response structure:', response.data)
-      }
+      // if (response.data && response.data.data) {
+      //   console.log('✅ Response.data.available:', response.data.data.available)
+      //   console.log('✅ Response.data.found:', response.data.data.found)
+      //   console.log('✅ Response.data.availableStock:', response.data.data.availableStock)
+      // } else {
+      //   console.log('⚠️ Beklenmeyen response structure:', response.data)
+      // }
       
       return response.data
       

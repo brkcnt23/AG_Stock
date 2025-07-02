@@ -33,7 +33,7 @@ const validateObjectId = (req, res, next) => {
 async function checkMaterialStock(materialId, materialType, requestedQuantity) {
   try {
     console.log('🔍 checkMaterialStock başlatıldı');
-    console.log('📋 Parametreler:', { materialId, materialType, requestedQuantity });
+    // console.log('📋 Parametreler:', { materialId, materialType, requestedQuantity });
     
     const Model = getModelByType(materialType);
     if (!Model) {
@@ -45,15 +45,15 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
         material: null,
         error: `Geçersiz malzeme türü: ${materialType}`
       };
-      console.log('📤 checkMaterialStock sonucu (hata):', result);
+      // console.log('📤 checkMaterialStock sonucu (hata):', result);
       return result;
     }
     
-    console.log('✅ Model bulundu:', Model.modelName);
+    // console.log('✅ Model bulundu:', Model.modelName);
     
     const material = await Model.findById(materialId);
     if (!material) {
-      console.log('❌ Malzeme bulunamadı, ID:', materialId);
+      // console.log('❌ Malzeme bulunamadı, ID:', materialId);
       const result = {
         found: false,
         available: false,
@@ -64,7 +64,7 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       return result;
     }
     
-    console.log('✅ Malzeme bulundu:', material.malzeme || material.name || 'İsimsiz');
+    // console.log('✅ Malzeme bulundu:', material.malzeme || material.name || 'İsimsiz');
     
     // Stok miktarını materialType'a göre al
     let availableStock = 0;
@@ -74,16 +74,16 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       case 'halat':
       case 'fitil':
         availableStock = parseFloat(material.kalanMiktar || '0');
-        console.log('📊 Kalan miktar (sarf/celik/halat/fitil):', availableStock);
+        // console.log('📊 Kalan miktar (sarf/celik/halat/fitil):', availableStock);
         break;
       case 'membran':
         availableStock = parseFloat(material.topSayisi || '0');
-        console.log('📊 Top sayısı (membran):', availableStock);
+        // console.log('📊 Top sayısı (membran):', availableStock);
         break;
     }
     
     const sufficient = availableStock >= requestedQuantity;
-    console.log('✅ Stok yeterli mi?', sufficient, `(${availableStock} >= ${requestedQuantity})`);
+    // console.log('✅ Stok yeterli mi?', sufficient, `(${availableStock} >= ${requestedQuantity})`);
     
     const result = {
       found: true,
@@ -101,7 +101,7 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       }
     };
     
-    console.log('📤 checkMaterialStock BAŞARILI sonucu:', result);
+    // console.log('📤 checkMaterialStock BAŞARILI sonucu:', result);
     return result;
     
   } catch (error) {
@@ -113,7 +113,7 @@ async function checkMaterialStock(materialId, materialType, requestedQuantity) {
       material: null,
       error: error.message
     };
-    console.log('📤 checkMaterialStock sonucu (exception):', result);
+    // console.log('📤 checkMaterialStock sonucu (exception):', result);
     return result;
   }
 }
@@ -167,7 +167,7 @@ async function updateMaterialStock(materialId, materialType, quantity, operation
     }
     
     await Model.findByIdAndUpdate(materialId, updateData);
-    console.log(`✅ ${materialType} stok güncellendi: ${operation} - ${quantity}`);
+    // console.log(`✅ ${materialType} stok güncellendi: ${operation} - ${quantity}`);
     
   } catch (error) {
     console.error(`❌ Stok güncelleme hatası:`, error);
@@ -221,15 +221,15 @@ async function validateProjectMaterials(materials) {
 // ===== ROUTES =====
 
 router.get('/test-route', (req, res) => {
-  console.log('🧪 Test route çağrıldı!');
+  // console.log('🧪 Test route çağrıldı!');
   res.json({ message: 'Test route çalışıyor!', timestamp: new Date().toISOString() });
 });
 
 // Gerçek check-stock route'u
 router.get('/check-stock', async (req, res) => {
   try {
-    console.log('🔍 Check-stock route çağrıldı!');
-    console.log('📥 Query params:', req.query);
+    // console.log('🔍 Check-stock route çağrıldı!');
+    // console.log('📥 Query params:', req.query);
     
     const { materialId, materialType, quantity } = req.query;
     
@@ -267,7 +267,7 @@ router.get('/check-stock', async (req, res) => {
       });
     }
 
-    console.log('✅ Parametreler geçerli, stok kontrolü başlatılıyor...');
+    // console.log('✅ Parametreler geçerli, stok kontrolü başlatılıyor...');
     
     // Stock check
     const stockCheck = await checkMaterialStock(
@@ -276,7 +276,7 @@ router.get('/check-stock', async (req, res) => {
       Number(quantity)
     );
     
-    console.log('📤 Stok kontrol sonucu:', stockCheck);
+    // console.log('📤 Stok kontrol sonucu:', stockCheck);
     
     res.json({
       success: true,
@@ -340,7 +340,7 @@ router.get('/', async (req, res) => {
       .skip((page - 1) * limit)
       .populate('materials.materialId'); // ObjectId referanslarını doldur
 
-    console.log(`📤 ${projects.length} proje gönderildi`);
+    // console.log(`📤 ${projects.length} proje gönderildi`);
     res.json(projects);
   } catch (err) {
     console.error('❌ Proje listesi hatası:', err);
@@ -350,9 +350,9 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('🚀 POST / route çağrıldı!');
-    console.log('📥 req.body:', JSON.stringify(req.body, null, 2));
-    console.log('📋 Proje adı:', req.body.name);
-    console.log('📦 Malzeme sayısı:', req.body.materials?.length || 0);
+    // console.log('📥 req.body:', JSON.stringify(req.body, null, 2));
+    // console.log('📋 Proje adı:', req.body.name);
+    // console.log('📦 Malzeme sayısı:', req.body.materials?.length || 0);
     
     // Materials array'indeki materialId'leri ObjectId'ye çevir
     if (req.body.materials && Array.isArray(req.body.materials)) {
@@ -385,8 +385,8 @@ router.post('/', async (req, res) => {
             islem: 'ekle',
             detay: savedProject
           });
-          console.log('✅ Socket event gönderildi');
-        } else {
+        } 
+        else {
           console.log('⚠️ Socket.io mevcut değil, log sadece DB\'ye kaydedildi');
         }
       } else {
@@ -579,7 +579,7 @@ router.delete('/:id', validateObjectId, async (req, res) => {
 // POST: Malzeme rezerve et - ObjectId ile
 router.post('/:id/reserve', validateObjectId, async (req, res) => {
   try {
-    console.log('📦 Proje malzemeleri rezerve ediliyor:', req.params.id);
+    // console.log('📦 Proje malzemeleri rezerve ediliyor:', req.params.id);
     
     const project = await Project.findById(req.params.id);
     if (!project) {
@@ -683,7 +683,7 @@ router.post('/:id/reserve', validateObjectId, async (req, res) => {
 // POST: Proje başlat
 router.post('/:id/start', validateObjectId, async (req, res) => {
   try {
-    console.log('▶️ Proje başlatılıyor:', req.params.id);
+    // console.log('▶️ Proje başlatılıyor:', req.params.id);
     
     const project = await Project.findById(req.params.id);
     if (!project) {
@@ -723,7 +723,7 @@ router.post('/:id/start', validateObjectId, async (req, res) => {
 // POST: Proje tamamla
 router.post('/:id/complete', validateObjectId, async (req, res) => {
   try {
-    console.log('✅ Proje tamamlanıyor:', req.params.id);
+    // console.log('✅ Proje tamamlanıyor:', req.params.id);
     
     const project = await Project.findById(req.params.id);
     if (!project) {
