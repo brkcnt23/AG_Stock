@@ -478,15 +478,28 @@ const selectMaterial = (material: any) => {
   
   const selectedMaterial = {
     ...material,
+    // ✅ Frontend'de hem id hem materialId gönder
+    materialId: material.id || material._id,  // Backend için materialId
+    materialType: material.type,              // Backend için materialType 
     requestedQuantity: quantity,
     reservedQuantity: 0,
     usedQuantity: 0,
     status: 'planned',
     priority: 'medium',
-    totalPrice: (material.unitPrice || 0) * quantity
+    totalPrice: (material.unitPrice || 0) * quantity,
+    
+    // Ek bilgiler
+    name: material.name,
+    unit: material.unit,
+    unitPrice: material.unitPrice,
+    stockAvailable: material.stockAvailable,
+    availableStock: material.availableStock
   }
   
   console.log('✅ Malzeme seçildi:', selectedMaterial)
+  console.log('📋 MaterialId:', selectedMaterial.materialId)
+  console.log('📋 MaterialType:', selectedMaterial.materialType)
+  
   emit('select', selectedMaterial)
 }
 

@@ -72,4 +72,4 @@ fitilSchema.index({
   aciklama: 'text' 
 })
 
-module.exports = mongoose.model('Fitil', fitilSchema)
+module.exports = mongoose.model('Fitil', fitilSchema, 'fitil')

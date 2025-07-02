@@ -193,6 +193,66 @@ async function validateProjectMaterials(materials) {
 
 // ===== ROUTES =====
 
+// GET: Malzeme stok kontrolü - Frontend için endpoint
+router.get('/check-stock', async (req, res) => {
+  try {
+    const { materialId, materialType, quantity } = req.query;
+    
+    // Parameter validation
+    if (!materialId) {
+      return res.status(400).json({
+        success: false,
+        error: 'materialId parametresi gerekli'
+      });
+    }
+    
+    if (!materialType) {
+      return res.status(400).json({
+        success: false,
+        error: 'materialType parametresi gerekli'
+      });
+    }
+    
+    if (!quantity || isNaN(Number(quantity))) {
+      return res.status(400).json({
+        success: false,
+        error: 'Geçerli quantity parametresi gerekli'
+      });
+    }
+
+    // ObjectId validation
+    if (!mongoose.Types.ObjectId.isValid(materialId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Geçersiz materialId formatı'
+      });
+    }
+
+    // Stock check
+    const stockCheck = await checkMaterialStock(
+      materialId, 
+      materialType, 
+      Number(quantity)
+    );
+    
+    console.log(`🔍 Stok kontrolü: ${materialType}/${materialId} - Miktar: ${quantity}`);
+    console.log(`📊 Sonuç: Bulunan: ${stockCheck.found}, Yeterli: ${stockCheck.available}, Mevcut: ${stockCheck.availableStock}`);
+    
+    res.json({
+      success: true,
+      data: stockCheck
+    });
+
+  } catch (err) {
+    console.error('❌ Stok kontrol hatası:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Stok kontrolü başarısız',
+      details: err.message
+    });
+  }
+});
+
 // GET: Tüm projeler - populate ile malzemeleri getir
 router.get('/', async (req, res) => {
   try {

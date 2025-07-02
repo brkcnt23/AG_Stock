@@ -1,4 +1,5 @@
 <!-- components/FiltersSection.vue -->
+<!-- projeye atanmış / rezerve edilmiş / tümünü göster olacak! -->
 <template>
   <div class="filters-section">
     <div class="filter-header">

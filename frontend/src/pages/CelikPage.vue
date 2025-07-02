@@ -339,9 +339,9 @@ const filters = reactive({
   rafNo: ''
 })
 
-// Computed
 const filteredItems = computed(() => {
-  let items = store.items
+  // Reaktif store'dan gelen veriyi kopyala
+  let items = [...store.items] // ✅ Bu en kritik düzeltme!
 
   // Search filter
   if (searchText.value) {
@@ -381,20 +381,18 @@ const filteredItems = computed(() => {
     }
   })
 
-  // Sort
+  // Sort (yine kopyalanmış veri üzerinden güvenle)
   items.sort((a: any, b: any) => {
     const aVal = a[sortField.value] ?? ''
     const bVal = b[sortField.value] ?? ''
-    
-    if (sortDirection.value === 'asc') {
-      return aVal > bVal ? 1 : -1
-    } else {
-      return aVal < bVal ? 1 : -1
-    }
+    return sortDirection.value === 'asc'
+      ? aVal > bVal ? 1 : -1
+      : aVal < bVal ? 1 : -1
   })
 
   return items
 })
+
 
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value

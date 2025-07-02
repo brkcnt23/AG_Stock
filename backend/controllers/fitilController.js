@@ -7,7 +7,6 @@ const fitilController = {
   getFitils: async (req, res) => {
     try {
       const fitils = await Fitil.find().sort({ createdAt: -1 });
-      console.log('📤 Fitiller gönderiliyor:', fitils.length);
       res.json(successResponse(fitils, 'Fitiller başarıyla getirildi'));
     } catch (error) {
       console.error('❌ Fitil listesi hatası:', error);

@@ -383,19 +383,19 @@ const filters = reactive({
 
 // Computed
 const filteredItems = computed(() => {
-  let items = store.items
+  // items'ın kopyasını al
+  let items = [...store.items]  // ✅ Mutasyona uğramayacak
 
   // Search filter
   if (searchText.value) {
     const search = searchText.value.toLowerCase()
-    items = items.filter(item => 
+    items = items.filter(item =>
       item.malzeme?.toLowerCase().includes(search) ||
       item.cins?.toLowerCase().includes(search) ||
       item.kalite?.toLowerCase().includes(search) ||
       item.renk?.toLowerCase().includes(search) ||
       item.tedarikci?.toLowerCase().includes(search) ||
-      item.proje?.toLowerCase().includes(search) ||
-      item.tedarikci?.toLowerCase().includes(search)
+      item.proje?.toLowerCase().includes(search)
     )
   }
 
@@ -427,7 +427,6 @@ const filteredItems = computed(() => {
   items.sort((a: any, b: any) => {
     const aVal = a[sortField.value] ?? ''
     const bVal = b[sortField.value] ?? ''
-    
     if (sortDirection.value === 'asc') {
       return aVal > bVal ? 1 : -1
     } else {

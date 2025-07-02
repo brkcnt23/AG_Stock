@@ -1,7 +1,7 @@
 <!-- components/BaseModal.vue -->
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
-    <div class="modal-content" @click.stop :class="sizeClass">
+  <div class="modal-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
+    <div class="modal-content" @click.stop @mousedown.stop :class="sizeClass">
       <div class="modal-header">
         <h3>{{ title }}</h3>
         <button @click="$emit('close')" class="close-btn">✕</button>
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   title: string
@@ -28,13 +28,35 @@ const props = withDefaults(defineProps<{
   size: 'medium'
 })
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
 
 const sizeClass = computed(() => {
   return `modal-${props.size}`
 })
+
+// Track where the mouse was pressed down
+const mouseDownInsideModal = ref(false)
+
+const handleOverlayMouseDown = (event: MouseEvent) => {
+  // Check if mouse down happened on the modal content
+  const target = event.target as HTMLElement
+  const modalContent = target.closest('.modal-content')
+  mouseDownInsideModal.value = !!modalContent
+}
+
+const handleOverlayClick = (event: MouseEvent) => {
+  // Only close if:
+  // 1. Click happened directly on overlay (not modal content)
+  // 2. AND mouse was initially pressed down outside modal
+  if (event.target === event.currentTarget && !mouseDownInsideModal.value) {
+    emit('close')
+  }
+  
+  // Reset tracking
+  mouseDownInsideModal.value = false
+}
 </script>
 
 <style scoped>
@@ -62,6 +84,8 @@ const sizeClass = computed(() => {
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: modalAppear 0.3s ease-out;
+  /* Prevent text selection issues */
+  user-select: auto;
 }
 
 .modal-small { max-width: 400px; }
@@ -93,6 +117,8 @@ const sizeClass = computed(() => {
   padding: 4px;
   border-radius: 4px;
   transition: background 0.2s;
+  /* Prevent accidental selection */
+  user-select: none;
 }
 
 .close-btn:hover {
@@ -103,6 +129,8 @@ const sizeClass = computed(() => {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
+  /* Allow text selection in modal body */
+  user-select: text;
 }
 
 .modal-footer {
