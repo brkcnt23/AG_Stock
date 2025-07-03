@@ -175,20 +175,17 @@ import { ObjectId } from 'mongodb'
 import { objectIdToString, isValidObjectId } from '../utils/objectId'
 import { useProjectsStore } from '../store/projectsStore'
 import { useToastStore } from '../store/toastStore' // YENİ
-import { useSocketToast } from '../composables/useSocketToast' // YENİ
+import { useSocket } from '../composables/useSocket' // YENİ
 import type { Project } from '../types/projects'
 import PageHeader from '../components/PageHeader.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import CreateProjectModal from '../components/CreateProjectModal.vue'
 import EditProjectModal from '../components/EditProjectModal.vue'
 import ProjectDetailsModal from '../components/ProjectDetailsModal.vue'
-import { useNotificationStore } from '../store/notificationStore'
-import { useSocket as socket } from '../composables/useSocket'
 
 // Store
 const projectStore = useProjectsStore()
 const toastStore = useToastStore() // YENİ
-const socketToast = useSocketToast() // YENİ
 // State
 const statusFilter = ref('')
 const stockFilter = ref('')
@@ -198,7 +195,7 @@ const showDetailsModal = ref(false)
 const selectedProject = ref<Project | null>(null)
 const editingProject = ref<Project | null>(null)
 const showEditModal = ref(false)
-const { connected } = useSocketToast()
+const { connected, notifications } = useSocket() // ✅ Sadece state'leri al
 
 // Computed
 const filteredProjects = computed(() => {

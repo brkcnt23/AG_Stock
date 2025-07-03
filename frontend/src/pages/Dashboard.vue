@@ -55,16 +55,16 @@
     <!-- Currency Breakdown -->
     <div class="currency-breakdown">
       <div class="section-header">
-        <h2>💱 Para Birimi Dağılımı</h2>
+        <h2>💰 Para Birimi Dağılımı</h2>
       </div>
       <div class="currency-cards">
         <div class="currency-card tl">
           <div class="currency-info">
-            <span class="currency-symbol">₺</span>
+            <div class="currency-symbol">₺</div>
             <div class="currency-details">
               <h4>{{ formatCurrency(currencyBreakdown.TL) }}</h4>
               <p>Türk Lirası</p>
-              <small>%{{ getCurrencyPercentage('TL') }}</small>
+              <small>{{ getCurrencyPercentage('TL') }}% toplam değerin</small>
             </div>
           </div>
           <div class="currency-bar">
@@ -74,11 +74,11 @@
         
         <div class="currency-card usd">
           <div class="currency-info">
-            <span class="currency-symbol">$</span>
+            <div class="currency-symbol">$</div>
             <div class="currency-details">
-              <h4>{{ formatCurrency(currencyBreakdown.USD * exchangeRates.USD) }}</h4>
+              <h4>{{ formatCurrency(currencyBreakdown.USD) }}</h4>
               <p>Amerikan Doları</p>
-              <small>${{ formatNumber(currencyBreakdown.USD) }} • %{{ getCurrencyPercentage('USD') }}</small>
+              <small>{{ getCurrencyPercentage('USD') }}% toplam değerin</small>
             </div>
           </div>
           <div class="currency-bar">
@@ -88,11 +88,11 @@
         
         <div class="currency-card eur">
           <div class="currency-info">
-            <span class="currency-symbol">€</span>
+            <div class="currency-symbol">€</div>
             <div class="currency-details">
-              <h4>{{ formatCurrency(currencyBreakdown.EUR * exchangeRates.EUR) }}</h4>
+              <h4>{{ formatCurrency(currencyBreakdown.EUR) }}</h4>
               <p>Euro</p>
-              <small>€{{ formatNumber(currencyBreakdown.EUR) }} • %{{ getCurrencyPercentage('EUR') }}</small>
+              <small>{{ getCurrencyPercentage('EUR') }}% toplam değerin</small>
             </div>
           </div>
           <div class="currency-bar">
@@ -110,29 +110,25 @@
       <div class="category-grid">
         <div v-for="category in stockCategories" :key="category.type" 
              class="category-card" 
-             :class="category.type"
-             
              @click="navigateToCategory(category.type)">
-          <div class="category-header">
-            <img :src="category.iconPath" class="category-icon" alt="icon" />
-            <h3>{{ category.name }}</h3>
-          </div>
-          <div class="category-stats">
-            <div class="stat-item">
-              <span class="stat-value">{{ category.itemCount }}</span>
-              <span class="stat-label">Kalem</span>
+          <div class="category-icon">{{ category.icon }}</div>
+          <div class="category-info">
+            <h4>{{ category.name }}</h4>
+            <div class="category-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{ category.itemCount }}</span>
+                <span class="stat-label">Çeşit</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ formatCurrency(category.totalValue) }}</span>
+                <span class="stat-label">Toplam Değer</span>
+              </div>
             </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ formatCurrency(category.totalValue) }}</span>
-              <span class="stat-label">Değer</span>
+            <div class="category-status">
+              <span class="status-indicator" :class="getStatusClass(category.criticalCount)">
+                {{ category.criticalCount }} kritik stok
+              </span>
             </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ category.lowStockCount }}</span>
-              <span class="stat-label">Düşük Stok</span>
-            </div>
-          </div>
-          <div class="category-footer">
-            <span class="avg-price">Ort. Fiyat: {{ formatCurrency(category.averagePrice) }}</span>
           </div>
         </div>
       </div>
@@ -141,19 +137,17 @@
     <!-- Top Suppliers -->
     <div class="top-suppliers">
       <div class="section-header">
-        <h2>🏭 En Büyük Tedarikçiler</h2>
+        <h2>🏢 En Büyük Tedarikçiler</h2>
       </div>
-      <div class="suppliers-list">
-        <div v-for="(supplier, index) in topSuppliers" :key="supplier.name" 
-             class="supplier-card">
-          <div class="supplier-rank">{{ index + 1 }}</div>
+      <div class="supplier-list">
+        <div v-for="supplier in topSuppliers" :key="supplier.name" class="supplier-card">
           <div class="supplier-info">
             <h4>{{ supplier.name }}</h4>
-            <p>{{ supplier.itemCount }} kalem malzeme</p>
+            <p>{{ supplier.city }}</p>
           </div>
           <div class="supplier-stats">
             <div class="total-value">{{ formatCurrency(supplier.totalValue) }}</div>
-            <div class="percentage">%{{ getSupplierPercentage(supplier.totalValue) }}</div>
+            <div class="percentage">{{ supplier.percentage }}% toplam alımın</div>
           </div>
         </div>
       </div>
@@ -162,42 +156,42 @@
     <!-- Recent Price Changes -->
     <div class="price-changes">
       <div class="section-header">
-        <h2>📈 Son Fiyat Değişiklikleri</h2>
+        <h2>📊 Son Fiyat Değişiklikleri</h2>
       </div>
       <div class="price-history">
-        <div v-for="change in recentPriceChanges" :key="change.id" 
-             class="price-change-item">
+        <div v-for="change in recentPriceChanges" :key="change.id" class="price-change-item">
           <div class="change-material">
-            <span class="material-icon">{{ getMaterialIcon(change.materialType) }}</span>
+            <div class="material-icon">{{ change.icon }}</div>
             <div class="material-details">
               <h5>{{ change.materialName }}</h5>
-              <small>{{ change.supplier }}</small>
+              <small>{{ change.category }}</small>
             </div>
           </div>
           <div class="price-change">
-            <div class="old-price">{{ formatPrice(change.oldPrice, change.currency) }}</div>
-            <div class="arrow" :class="change.trend">{{ change.trend === 'up' ? '↗️' : '↘️' }}</div>
-            <div class="new-price">{{ formatPrice(change.newPrice, change.currency) }}</div>
+            <span class="old-price">{{ formatCurrency(change.oldPrice) }}</span>
+            <span class="arrow" :class="change.direction">{{ change.direction === 'up' ? '↗️' : '↘️' }}</span>
+            <span class="new-price">{{ formatCurrency(change.newPrice) }}</span>
           </div>
-          <div class="change-date">{{ formatDate(change.date) }}</div>
+          <div class="change-date">{{ change.changeDate }}</div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { safeAccess, ensureString, ensureId } from '../utils/typeHelpers'
+
 const router = useRouter()
 
-// Mock data - gerçek uygulamada API'den gelecek
+// Reactive data
 const exchangeRates = ref({
   USD: 32.45,
-  EUR: 35.20
+  EUR: 35.21
 })
 
+// Mock data - gerçek uygulamada API'den gelecek
 const totalStockValue = ref(2450000)
 const monthlyPurchases = ref(185000)
 const monthlyPurchaseCount = ref(23)
@@ -207,150 +201,115 @@ const averageMonthlySpending = ref(220000)
 
 const currencyBreakdown = ref({
   TL: 1850000,
-  USD: 12500,
-  EUR: 4200
+  USD: 405625,
+  EUR: 147840
 })
 
 const stockCategories = ref([
   {
     type: 'sarf',
     name: 'Sarf Malzemeler',
-    iconPath: '/package.png',
+    icon: '📦',
     itemCount: 156,
-    totalValue: 125000,
-    lowStockCount: 8,
-    averagePrice: 125
-  },
-  {
-    type: 'celik',
-    name: 'Çelik Malzemeler',
-    iconPath: '/ironrodbar.png',
-    itemCount: 89,
-    totalValue: 890000,
-    lowStockCount: 3,
-    averagePrice: 2500
+    totalValue: 850000,
+    criticalCount: 8
   },
   {
     type: 'membran',
     name: 'Membran',
-    iconPath: '/paper-roll.png',
-    itemCount: 34,
-    totalValue: 450000,
-    lowStockCount: 2,
-    averagePrice: 8500
+    icon: '📄',
+    itemCount: 45,
+    totalValue: 420000,
+    criticalCount: 2
+  },
+  {
+    type: 'celik',
+    name: 'Çelik',
+    icon: '🔩',
+    itemCount: 89,
+    totalValue: 680000,
+    criticalCount: 1
   },
   {
     type: 'halat',
     name: 'Halat',
-    iconPath: '/halat.png',
-    itemCount: 67,
-    totalValue: 320000,
-    lowStockCount: 4,
-    averagePrice: 1800
+    icon: '⛓️',
+    itemCount: 34,
+    totalValue: 290000,
+    criticalCount: 0
   },
   {
     type: 'fitil',
     name: 'Fitil',
-    iconPath: '/fitil.png',
-    itemCount: 45,
-    totalValue: 180000,
-    lowStockCount: 1,
-    averagePrice: 950
+    icon: '🧵',
+    itemCount: 67,
+    totalValue: 210000,
+    criticalCount: 1
   }
 ])
 
 const topSuppliers = ref([
-  { name: 'ABC Çelik San. Tic. Ltd.', itemCount: 45, totalValue: 680000 },
-  { name: 'DEF Endüstri A.Ş.', itemCount: 32, totalValue: 520000 },
-  { name: 'GHI Malzeme Paz.', itemCount: 28, totalValue: 340000 },
-  { name: 'JKL Metal San.', itemCount: 19, totalValue: 290000 },
-  { name: 'MNO Teknik Ltd.', itemCount: 15, totalValue: 180000 }
+  { name: 'ABC Endüstri A.Ş.', city: 'İstanbul', totalValue: 485000, percentage: 19.8 },
+  { name: 'XYZ Malzeme Ltd.', city: 'Ankara', totalValue: 350000, percentage: 14.3 },
+  { name: 'DEF Tedarik San.', city: 'İzmir', totalValue: 290000, percentage: 11.8 },
+  { name: 'GHI Kimya A.Ş.', city: 'Bursa', totalValue: 215000, percentage: 8.8 }
 ])
 
 const recentPriceChanges = ref([
   {
     id: 1,
-    materialType: 'celik',
-    materialName: 'S235 Çelik Boru Ø100',
-    supplier: 'ABC Çelik San.',
-    oldPrice: 2800,
-    newPrice: 3200,
-    currency: 'TL',
-    trend: 'up',
-    date: '2024-12-20'
+    materialName: 'Paslanmaz Çelik Boru',
+    category: 'Çelik',
+    icon: '🔩',
+    oldPrice: 125.50,
+    newPrice: 138.75,
+    direction: 'up',
+    changeDate: '2 gün önce'
   },
   {
     id: 2,
-    materialType: 'membran',
-    materialName: 'PTFE Membran 1500x3000',
-    supplier: 'DEF Endüstri',
-    oldPrice: 285,
-    newPrice: 265,
-    currency: 'USD',
-    trend: 'down',
-    date: '2024-12-19'
+    materialName: 'PVC Membran',
+    category: 'Membran',
+    icon: '📄',
+    oldPrice: 89.20,
+    newPrice: 82.15,
+    direction: 'down',
+    changeDate: '4 gün önce'
   }
 ])
 
-// Computed
-const totalValueAllCurrencies = computed(() => {
-  return currencyBreakdown.value.TL + 
-         (currencyBreakdown.value.USD * exchangeRates.value.USD) + 
-         (currencyBreakdown.value.EUR * exchangeRates.value.EUR)
-})
-
-// Methods
+// Computed properties
 const getCurrentDate = () => {
-  return new Date().toLocaleDateString('tr-TR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return new Date().toLocaleDateString('tr-TR', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    weekday: 'long'
   })
 }
 
-const formatCurrency = (amount: number) => {
-  return amount.toLocaleString('tr-TR') + ' ₺'
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'TRY',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount).replace('₺', '₺')
 }
 
-const formatNumber = (amount: number) => {
-  return amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })
+const getCurrencyPercentage = (currency) => {
+  const total = currencyBreakdown.value.TL + currencyBreakdown.value.USD + currencyBreakdown.value.EUR
+  return Math.round((currencyBreakdown.value[currency] / total) * 100)
 }
 
-const formatPrice = (amount: number, currency: string) => {
-  const symbols = { TL: '₺', USD: '$', EUR: '€' }
-  return `${amount.toLocaleString('tr-TR')} ${symbols[currency as keyof typeof symbols]}`
+const getStatusClass = (criticalCount) => {
+  if (criticalCount === 0) return 'status-good'
+  if (criticalCount <= 2) return 'status-warning'
+  return 'status-critical'
 }
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('tr-TR')
-}
-
-const getCurrencyPercentage = (currency: string) => {
-  let value = 0
-  if (currency === 'TL') value = currencyBreakdown.value.TL
-  if (currency === 'USD') value = currencyBreakdown.value.USD * exchangeRates.value.USD
-  if (currency === 'EUR') value = currencyBreakdown.value.EUR * exchangeRates.value.EUR
-  
-  return Math.round((value / totalValueAllCurrencies.value) * 100)
-}
-
-const getSupplierPercentage = (supplierValue: number) => {
-  return Math.round((supplierValue / totalStockValue.value) * 100)
-}
-
-const getMaterialIcon = (type: string) => {
-  const icons = {
-    sarf: '📦',
-    celik: '🔧',
-    membran: '📄',
-    halat: '🔗',
-    fitil: '🧵'
-  }
-  return icons[type as keyof typeof icons] || '📋'
-}
-
-const navigateToCategory = (categoryType: string) => {
+// Methods
+const navigateToCategory = (categoryType) => {
   router.push(`/${categoryType}`)
 }
 
@@ -564,7 +523,7 @@ onMounted(() => {
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
@@ -574,75 +533,81 @@ onMounted(() => {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-}
-.category-icon{
-  width: 40px !important;
-  height: 40px !important;
-  margin-right: 6px;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .category-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.category-card.sarf { border-left: 4px solid #f59e0b; }
-.category-card.celik { border-left: 4px solid #6b7280; }
-.category-card.membran { border-left: 4px solid #06b6d4; }
-.category-card.halat { border-left: 4px solid #8b5cf6; }
-.category-card.fitil { border-left: 4px solid #10b981; }
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #3b82f6;
 }
 
 .category-icon {
-  font-size: 1.8rem;
+  font-size: 2.5rem;
+  width: 60px;
+  height: 60px;
+  background: #f8fafc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.category-header h3 {
+.category-info h4 {
   color: #1e293b;
-  margin: 0;
+  margin: 0 0 8px 0;
   font-size: 1.1rem;
 }
 
 .category-stats {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
+  gap: 15px;
+  margin-bottom: 8px;
 }
 
 .stat-item {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.stat-value {
-  display: block;
-  font-size: 1.3rem;
+.stat-number {
   font-weight: 700;
   color: #1e293b;
+  font-size: 1.1rem;
 }
 
 .stat-label {
   font-size: 11px;
   color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.category-footer {
-  padding-top: 15px;
-  border-top: 1px solid #f3f4f6;
-  text-align: center;
+.category-status {
+  margin-top: 8px;
 }
 
-.avg-price {
-  color: #6b7280;
-  font-size: 13px;
+.status-indicator {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.status-indicator.status-good {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.status-indicator.status-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.status-indicator.status-critical {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 /* Top Suppliers */
@@ -654,7 +619,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.suppliers-list {
+.supplier-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -662,8 +627,8 @@ onMounted(() => {
 
 .supplier-card {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
   padding: 15px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -675,14 +640,6 @@ onMounted(() => {
 }
 
 .supplier-rank {
-  width: 30px;
-  height: 30px;
-  background: #3b82f6;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-weight: bold;
   font-size: 14px;
 }

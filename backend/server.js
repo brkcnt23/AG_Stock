@@ -1,9 +1,9 @@
-// backend/server.js - Model çakışması düzeltmesi
+// backend/server.js - Socket.io düzeltilmiş versiyon
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const http = require('http')
-const socketIO = require('socket.io')
+const http = require('http');
+const socketIO = require('socket.io');
 const cors = require('cors');
 
 // Model çakışmalarını önlemek için mongoose cache'i temizle
@@ -11,6 +11,7 @@ mongoose.models = {};
 mongoose.modelSchemas = {};
 
 const app = express();
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -19,23 +20,31 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-const server = http.createServer(app)
+// ✅ HTTP Server oluştur
+const server = http.createServer(app);
 
+// ✅ Socket.io Server oluştur
 const io = socketIO(server, {
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     methods: ['GET', 'POST']
   }
-})
+});
 
-io.on('connection', socket => {
-  console.log('🟢 Yeni Socket bağlantısı:', socket.id)
+// ✅ Socket.io connection handler
+io.on('connection', (socket) => {
+  console.log('🟢 Yeni Socket bağlantısı:', socket.id);
 
-  socket.on('disconnect', () => {
-    console.log('🔴 Socket bağlantısı koptu:', socket.id)
-  })
-})
+  socket.on('disconnect', (reason) => {
+    console.log('🔴 Socket bağlantısı koptu:', socket.id, reason);
+  });
 
+  // Test eventi
+  socket.emit('welcome', { message: 'Socket.io bağlantısı başarılı!' });
+});
+
+// ✅ Socket.io instance'ını app'e ekle
+app.set('io', io);
 
 // Routes import etmeden önce modelleri temizle
 const clearModels = () => {
@@ -108,7 +117,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     message: 'Server çalışıyor', 
     timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    socketio: 'active' // ✅ Socket.io durumu
   });
 });
 
@@ -146,10 +156,12 @@ mongoose.connect(MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB bağlantısı başarılı");
     
-    app.listen(PORT, () => {
+    // ✅ Server'ı dinlemeye başla (app.listen değil server.listen!)
+    server.listen(PORT, () => {
       console.log(`🚀 Server ${PORT} portunda çalışıyor...`);
       console.log(`📡 API: http://localhost:${PORT}/api/`);
       console.log(`🔍 Health: http://localhost:${PORT}/api/health`);
+      console.log(`🔌 Socket.io: http://localhost:${PORT}/socket.io/`);
     });
   })
   .catch((err) => {
@@ -157,6 +169,4 @@ mongoose.connect(MONGO_URI)
     process.exit(1);
   });
 
-app.set('io', io)
-
-module.exports = app;
+module.exports = { app, server, io };

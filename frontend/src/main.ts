@@ -1,4 +1,4 @@
-// frontend/src/main.ts - Clean entry point without MongoDB
+// frontend/src/main.ts - Düzeltilmiş versiyon
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import Toast, { POSITION } from 'vue-toastification'
@@ -6,7 +6,6 @@ import 'vue-toastification/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import './style.css'
-import { PluginOptions } from 'vue-toastification/dist/types/src/types'
 
 // Extend Window interface for __PINIA__ property
 declare global {
@@ -21,20 +20,8 @@ const app = createApp(App)
 // Create Pinia store
 const pinia = createPinia()
 
-// Use plugins
-app.use(pinia)
-app.use(router)
-
-// Global error handler
-app.config.errorHandler = (err, _vm, info) => {
-  console.error('Global error:', err, info)
-  
-  // Send to error tracking service in production
-  if (import.meta.env.PROD) {
-    // Example: Sentry.captureException(err)
-  }
-}
-const toastOptions: PluginOptions = {
+// Toast configuration
+const toastOptions = {
   position: POSITION.TOP_RIGHT,
   timeout: 4000,
   closeOnClick: true,
@@ -54,6 +41,22 @@ const toastOptions: PluginOptions = {
   bodyClassName: ["custom-toast-body"],
   containerClassName: ["custom-toast-container"]
 }
+
+// Use plugins
+app.use(pinia)
+app.use(router)
+app.use(Toast, toastOptions) // ✅ Bu satır eksikti!
+
+// Global error handler
+app.config.errorHandler = (err, _vm, info) => {
+  console.error('Global error:', err, info)
+  
+  // Send to error tracking service in production
+  if (import.meta.env.PROD) {
+    // Example: Sentry.captureException(err)
+  }
+}
+
 // Global warning handler
 app.config.warnHandler = (msg, _vm, trace) => {
   console.warn('Global warning:', msg, trace)

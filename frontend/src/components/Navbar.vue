@@ -20,7 +20,7 @@
         </router-link>
         <router-link to="/membran" class="nav-link" active-class="active">
           <img src="/paper-roll.png" class="nav-icon" />
-           Membran
+          Membran
         </router-link>
         <router-link to="/celik" class="nav-link" active-class="active">
           <img src="/ironrodbar.png" class="nav-icon" />
@@ -56,29 +56,6 @@
 </script>
 
 <style scoped>
-.nav-head-icon {
-  width: 50px !important;
-  height: 50px !important;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.brand-link .nav-head-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.nav-icon {
-  width: 25px !important;
-  height: 25px !important;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.brand-link .nav-icon {
-  width: 24px;
-  height: 24px;
-}
-
-
 .navbar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0 20px;
@@ -97,16 +74,29 @@
   height: 60px;
 }
 
+.nav-brand {
+  flex-shrink: 0;
+}
+
 .nav-brand .brand-link {
   color: white;
   text-decoration: none;
   font-size: 1.4rem;
   font-weight: 700;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .nav-brand .brand-link:hover {
   opacity: 0.8;
+}
+
+.nav-head-icon {
+  width: 32px !important;
+  height: 32px !important;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 .nav-links {
@@ -114,6 +104,7 @@
   gap: 5px;
   flex: 1;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -140,9 +131,18 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.nav-icon {
+  width: 20px !important;
+  height: 20px !important;
+  margin-right: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
 .nav-user {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .user-info {
@@ -155,6 +155,11 @@
 .user-name {
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.user-dropdown {
+  position: relative;
 }
 
 .dropdown-btn {
@@ -165,21 +170,94 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 16px;
 }
 
 .dropdown-btn:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .nav-links {
+    gap: 3px;
+  }
+  
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .nav-brand .brand-link {
+    font-size: 1.2rem;
+  }
+}
+
 @media (max-width: 1024px) {
+  .navbar {
+    padding: 0 15px;
+  }
+  
   .nav-container {
     flex-direction: column;
     height: auto;
     padding: 10px 0;
+    gap: 10px;
   }
   
   .nav-links {
     margin: 10px 0;
     justify-content: center;
-  }}
+    width: 100%;
+  }
+  
+  .nav-user {
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .nav-brand .brand-link {
+    font-size: 1.1rem;
+  }
+  
+  .nav-head-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .nav-container {
+    padding: 8px 0;
+  }
+  
+  .nav-links {
+    gap: 4px;
+  }
+  
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  
+  .nav-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  .user-name {
+    font-size: 12px;
+  }
+}
 </style>

@@ -1,9 +1,8 @@
-// frontend/src/store/toastStore.ts
-
+// frontend/src/store/toastStore.ts - Düzeltilmiş versiyon
 import { defineStore } from 'pinia'
-import useToast from 'vue-toastification'
-import ToastOptions from 'vue-toastification'
-import { PluginOptions } from 'vue-toastification/dist/types/src/types'
+import { useToast } from 'vue-toastification' // ✅ Doğru import
+import type { PluginOptions } from 'vue-toastification'
+
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
 export interface ToastMessage {
@@ -14,7 +13,7 @@ export interface ToastMessage {
 }
 
 export const useToastStore = defineStore('toast', () => {
-  const toast = useToast()
+  const toast = useToast() // ✅ Doğru kullanım
 
   // Toast göster
   const showToast = (notification: ToastMessage) => {
