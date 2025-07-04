@@ -3,20 +3,18 @@
 # ------------------------
 FROM node:18-alpine AS builder
 
-# Corepack ile pnpm’i etkinleştir
+# Corepack ile pnpm'i etkinleştir
 RUN corepack enable \
   && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Sadece lockfile ve package.json’ı kopyala, node_modules hazırlansın
+# Sadece lockfile ve package.json'ı kopyala, node_modules hazırlansın
 COPY pnpm-lock.yaml package.json ./
 RUN pnpm install --frozen-lockfile
 
-# Uygulama kodunu kopyala ve gerekiyorsa build et
+# Uygulama kodunu kopyala
 COPY . .
-# Eğer build adımı yoksa bu satırı kaldırabilirsiniz
-# RUN pnpm run build
 
 # ------------------------
 # 2) RUNTIME AŞAMASI
@@ -32,17 +30,17 @@ RUN corepack enable \
 
 WORKDIR /app
 
-# BUILD aşamasından sadece prod.dependencies ve build çıktılarını kopyala
+# BUILD aşamasından gerekli dosyaları kopyala
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-# Eğer build dizini varsa
-# COPY --from=builder /app/dist ./dist
 
-# Uygulama kodunu kopyala (production’da gerekliyse)
-COPY --from=builder /app/src ./src
-# Ya da direkt tüm dosyayı
-# COPY --from=builder /app ./
+# Tüm source dosyalarını kopyala
+COPY --from=builder /app/*.js ./
+COPY --from=builder /app/*.ts ./
+COPY --from=builder /app/routes ./routes
+COPY --from=builder /app/models ./models
 
-EXPOSE 3000
+EXPOSE 5000
 
-CMD ["pnpm", "start"]
+# server.js'i direkt çalıştır (CommonJS)
+CMD ["node", "server.js"]

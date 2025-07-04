@@ -153,7 +153,7 @@ const requireOwnershipOrAdmin = (userIdField = 'userId') => {
 const generateToken = (payload, options = {}) => {
   const defaultOptions = {
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-    issuer: process.env.JWT_ISSUER || 'stok-takip-app'
+    issuer: process.env.JWT_ISSUER || 'stoktakip-app'
   };
 
   return jwt.sign(

@@ -1,0 +1,48 @@
+# Exclude all node_modules
+**/node_modules
+node_modules
+
+# Exclude build outputs
+**/dist
+**/build
+backend/dist
+frontend/dist
+
+# Exclude logs
+**/*.log
+logs
+
+# Exclude environment files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Exclude git
+.git
+.gitignore
+
+# Exclude IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude Docker files
+**/Dockerfile
+**/docker-compose.yml
+**/.dockerignore
+
+# Exclude development files
+**/.eslintcache
+**/coverage
+**/*.tsbuildinfo
+
+# Exclude package manager files (we copy them separately)
+# **/pnpm-lock.yaml
+# **/package-lock.json
+# **/yarn.lock

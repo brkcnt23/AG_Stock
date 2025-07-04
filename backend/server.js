@@ -1,4 +1,4 @@
-// backend/server.js - Socket.io düzeltilmiş versiyon
+// backend/server.js - Socket.io düzeltilmiş versiyon + CORS fix
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,22 +12,48 @@ mongoose.modelSchemas = {};
 
 const app = express();
 
-// Middleware
+// ✅ IMPROVED CORS Configuration - Docker portlarını da dahil et
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: [
+    'http://localhost:5173',     // Vite dev server
+    'http://localhost:8080',     // Docker frontend
+    'http://localhost:80',       // Docker frontend alternative
+    'http://localhost:3000',     // Alternative port
+    process.env.FRONTEND_URL || 'http://localhost:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With', 
+    'Content-Type', 
+    'Accept',
+    'Authorization',
+    'Cache-Control'
+  ]
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ HTTP Server oluştur
 const server = http.createServer(app);
 
-// ✅ Socket.io Server oluştur
+// ✅ Socket.io Server oluştur - CORS güncellemesi
 const io = socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:80',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL || 'http://localhost:5173'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -149,7 +175,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/stok-takip';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/stoktakip';
 
 // MongoDB bağlantısı
 mongoose.connect(MONGO_URI)

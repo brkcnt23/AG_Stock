@@ -1,21 +1,32 @@
-// backend/routes/fitil.js
+// backend/routes/fitil.js - Fixed
 const express = require('express');
 const router = express.Router();
-const { fitilController } = require('../controllers/fitilController');
+const {
+  getFitils,
+  getFitilById,
+  createFitil,
+  updateFitil,
+  deleteFitil,
+  getFitilStats
+} = require('../controllers/fitilController');
+const { validateObjectIdParam } = require('../utils/objectId');
 
-// GET tüm fitilleri getir
-router.get('/', fitilController.getFitils);
+// GET /api/fitil/stats
+router.get('/stats', getFitilStats);
 
-// GET tek fitil getir
-router.get('/:id', fitilController.getFitilById);
+// GET /api/fitil
+router.get('/', getFitils);
 
-// POST yeni fitil ekle
-router.post('/', fitilController.createFitil);
+// GET /api/fitil/:id
+router.get('/:id', validateObjectIdParam('id'), getFitilById);
 
-// PUT fitil güncelle
-router.put('/:id', fitilController.updateFitil);
+// POST /api/fitil
+router.post('/', createFitil);
 
-// DELETE fitil sil
-router.delete('/:id', fitilController.deleteFitil);
+// PUT /api/fitil/:id
+router.put('/:id', validateObjectIdParam('id'), updateFitil);
+
+// DELETE /api/fitil/:id
+router.delete('/:id', validateObjectIdParam('id'), deleteFitil);
 
 module.exports = router;
