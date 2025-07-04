@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Stok Takip Uygulaması Frontend",
   "type": "module",
+   "packageManager": "pnpm@10.12.3",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",

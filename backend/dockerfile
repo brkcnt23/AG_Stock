@@ -1,15 +1,48 @@
-# backend/Dockerfile
-FROM node:18-alpine
+# ------------------------
+# 1) BUILD AŞAMASI
+# ------------------------
+FROM node:18-alpine AS builder
+
+# Corepack ile pnpm’i etkinleştir
+RUN corepack enable \
+  && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production
+# Sadece lockfile ve package.json’ı kopyala, node_modules hazırlansın
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm install --frozen-lockfile
 
+# Uygulama kodunu kopyala ve gerekiyorsa build et
 COPY . .
+# Eğer build adımı yoksa bu satırı kaldırabilirsiniz
+# RUN pnpm run build
 
-EXPOSE 5000
+# ------------------------
+# 2) RUNTIME AŞAMASI
+# ------------------------
+FROM node:18-alpine AS runner
 
-USER node
+# Yalnızca production mod
+ENV NODE_ENV=production
 
-CMD ["npm", "start"]
+# Corepack + pnpm yine aktif
+RUN corepack enable \
+  && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# BUILD aşamasından sadece prod.dependencies ve build çıktılarını kopyala
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+# Eğer build dizini varsa
+# COPY --from=builder /app/dist ./dist
+
+# Uygulama kodunu kopyala (production’da gerekliyse)
+COPY --from=builder /app/src ./src
+# Ya da direkt tüm dosyayı
+# COPY --from=builder /app ./
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
