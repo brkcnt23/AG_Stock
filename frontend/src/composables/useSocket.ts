@@ -28,7 +28,7 @@ interface StockUpdateData {
 }
 
 // ✅ GLOBAL STATE - Tek instance
-let globalSocket: typeof Socket | null = null
+let globalSocket: Socket | null = null
 const globalConnected = ref(false)
 const globalNotifications: Ref<Notification[]> = ref([])
 let isInitialized = false

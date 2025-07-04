@@ -171,7 +171,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ObjectId } from 'mongodb'
 import { objectIdToString, isValidObjectId } from '../utils/objectId'
 import { useProjectsStore } from '../store/projectsStore'
 import { useToastStore } from '../store/toastStore' // YENİ

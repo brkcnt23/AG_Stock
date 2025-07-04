@@ -181,7 +181,6 @@
 
 <script setup lang="ts">
 import { computed, withDefaults } from 'vue'
-import { ObjectId } from 'mongodb'
 import { objectIdToString, isValidObjectId } from '../utils/objectId'
 
 // Props
