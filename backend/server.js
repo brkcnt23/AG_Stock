@@ -1,4 +1,4 @@
-// backend/server.js - Socket.io düzeltilmiş versiyon
+// backend/server.js - Socket.io CORS düzeltilmiş versiyon
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,10 +12,15 @@ mongoose.modelSchemas = {};
 
 const app = express();
 
+// ✅ Frontend URL'i doğru tanımla
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -23,12 +28,15 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ HTTP Server oluştur
 const server = http.createServer(app);
 
-// ✅ Socket.io Server oluştur
+// ✅ Socket.io Server oluştur - CORS ayarları düzeltildi
 const io = socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
-  }
+    origin: FRONTEND_URL, // ✅ 8080 yerine 5173 kullan
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  allowEIO3: true,
+  transports: ['websocket', 'polling']
 });
 
 // ✅ Socket.io connection handler
@@ -41,6 +49,11 @@ io.on('connection', (socket) => {
 
   // Test eventi
   socket.emit('welcome', { message: 'Socket.io bağlantısı başarılı!' });
+  
+  // Test için ping-pong
+  socket.on('ping', () => {
+    socket.emit('pong', { timestamp: Date.now() });
+  });
 });
 
 // ✅ Socket.io instance'ını app'e ekle
@@ -118,7 +131,8 @@ app.get('/api/health', (req, res) => {
     message: 'Server çalışıyor', 
     timestamp: new Date().toISOString(),
     mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    socketio: 'active' // ✅ Socket.io durumu
+    socketio: 'active',
+    frontend_url: FRONTEND_URL // ✅ Debug için frontend URL'i göster
   });
 });
 
@@ -126,7 +140,19 @@ app.get('/api/', (req, res) => {
   res.json({ 
     message: 'Stok Takip API v1.0 🚀', 
     endpoints: ['/api/halat', '/api/sarf', '/api/celik', '/api/membran', '/api/fitil', '/api/projects'],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors_origin: FRONTEND_URL
+  });
+});
+
+// ✅ Socket.io test endpoint
+app.get('/api/socket-test', (req, res) => {
+  const connectedClients = io.engine.clientsCount;
+  res.json({
+    message: 'Socket.io test endpoint',
+    connected_clients: connectedClients,
+    socket_url: `http://localhost:${PORT}/socket.io/`,
+    cors_origin: FRONTEND_URL
   });
 });
 
@@ -162,6 +188,7 @@ mongoose.connect(MONGO_URI)
       console.log(`📡 API: http://localhost:${PORT}/api/`);
       console.log(`🔍 Health: http://localhost:${PORT}/api/health`);
       console.log(`🔌 Socket.io: http://localhost:${PORT}/socket.io/`);
+      console.log(`✅ CORS Origin: ${FRONTEND_URL}`); // ✅ CORS ayarını logla
     });
   })
   .catch((err) => {
