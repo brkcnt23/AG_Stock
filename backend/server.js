@@ -1,4 +1,4 @@
-// backend/server.js - Socket.io CORS düzeltilmiş versiyon
+// backend/server.js - Socket.io düzeltilmiş versiyon + CORS fix
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,31 +12,49 @@ mongoose.modelSchemas = {};
 
 const app = express();
 
-// ✅ Frontend URL'i doğru tanımla
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-// Middleware
+// ✅ IMPROVED CORS Configuration - Docker portlarını da dahil et
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: [
+    'http://localhost:5173',     // Vite dev server
+    'http://localhost:8080',     // Docker frontend
+    'http://localhost:80',       // Docker frontend alternative
+    'http://localhost:3000',     // Alternative port
+    process.env.FRONTEND_URL || 'http://localhost:5173'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With', 
+    'Content-Type', 
+    'Accept',
+    'Authorization',
+    'Cache-Control'
+  ]
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ HTTP Server oluştur
 const server = http.createServer(app);
 
-// ✅ Socket.io Server oluştur - CORS ayarları düzeltildi
+// ✅ Socket.io Server oluştur - CORS güncellemesi
 const io = socketIO(server, {
   cors: {
-    origin: FRONTEND_URL, // ✅ 8080 yerine 5173 kullan
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:80',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL || 'http://localhost:5173'
+    ],
     methods: ['GET', 'POST'],
     credentials: true
-  },
-  allowEIO3: true,
-  transports: ['websocket', 'polling']
+  }
 });
 
 // ✅ Socket.io connection handler
@@ -49,11 +67,6 @@ io.on('connection', (socket) => {
 
   // Test eventi
   socket.emit('welcome', { message: 'Socket.io bağlantısı başarılı!' });
-  
-  // Test için ping-pong
-  socket.on('ping', () => {
-    socket.emit('pong', { timestamp: Date.now() });
-  });
 });
 
 // ✅ Socket.io instance'ını app'e ekle
@@ -131,8 +144,7 @@ app.get('/api/health', (req, res) => {
     message: 'Server çalışıyor', 
     timestamp: new Date().toISOString(),
     mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    socketio: 'active',
-    frontend_url: FRONTEND_URL // ✅ Debug için frontend URL'i göster
+    socketio: 'active' // ✅ Socket.io durumu
   });
 });
 
@@ -140,19 +152,7 @@ app.get('/api/', (req, res) => {
   res.json({ 
     message: 'Stok Takip API v1.0 🚀', 
     endpoints: ['/api/halat', '/api/sarf', '/api/celik', '/api/membran', '/api/fitil', '/api/projects'],
-    timestamp: new Date().toISOString(),
-    cors_origin: FRONTEND_URL
-  });
-});
-
-// ✅ Socket.io test endpoint
-app.get('/api/socket-test', (req, res) => {
-  const connectedClients = io.engine.clientsCount;
-  res.json({
-    message: 'Socket.io test endpoint',
-    connected_clients: connectedClients,
-    socket_url: `http://localhost:${PORT}/socket.io/`,
-    cors_origin: FRONTEND_URL
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -175,7 +175,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/stok-takip';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/stoktakip';
 
 // MongoDB bağlantısı
 mongoose.connect(MONGO_URI)
@@ -188,7 +188,6 @@ mongoose.connect(MONGO_URI)
       console.log(`📡 API: http://localhost:${PORT}/api/`);
       console.log(`🔍 Health: http://localhost:${PORT}/api/health`);
       console.log(`🔌 Socket.io: http://localhost:${PORT}/socket.io/`);
-      console.log(`✅ CORS Origin: ${FRONTEND_URL}`); // ✅ CORS ayarını logla
     });
   })
   .catch((err) => {
